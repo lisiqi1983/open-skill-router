@@ -55,6 +55,37 @@ export async function checkForUpdates(
     try {
       const scan = await scanSkillDirectory(fetched.rootPath);
       if (
+        fetched.sourceType !== installedSkill.sourceType ||
+        fetched.id !== installedSkill.skillId
+      ) {
+        checks.push({
+          installedSkill,
+          classification: "blocked",
+          reasons: [
+            "Fetched source identity does not match the installed lockfile entry.",
+          ],
+          latestCommitSha: fetched.commitSha,
+          latestContentHash: scan.contentHash,
+        });
+        continue;
+      }
+
+      if (
+        installedSkill.sourceType === "github" &&
+        fetched.commitSha === installedSkill.installedCommitSha &&
+        scan.contentHash !== installedSkill.contentHash
+      ) {
+        checks.push({
+          installedSkill,
+          classification: "blocked",
+          reasons: ["GitHub content hash changed without a commit SHA change."],
+          latestCommitSha: fetched.commitSha,
+          latestContentHash: scan.contentHash,
+        });
+        continue;
+      }
+
+      if (
         scan.contentHash === installedSkill.contentHash &&
         fetched.commitSha === installedSkill.installedCommitSha
       ) {

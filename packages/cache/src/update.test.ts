@@ -125,6 +125,31 @@ describe("checkForUpdates", () => {
     expect(checks[0]?.classification).toBe("requires_confirmation");
     expect(checks[0]?.latestCommitSha).toBe("new456");
   });
+
+  it("blocks GitHub hash anomalies when content changes without commit change", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "skillrouter-update-"));
+    await installSkill("github:owner/repo/skills/demo@main", {
+      homeDir: path.join(root, "home"),
+      targetDir: path.join(root, "target"),
+      fetchImpl: githubFetch({
+        commitSha: "same123",
+        skillBody: "---\nname: github-hash\n---\n# Demo\n",
+        extraFiles: {},
+      }) as typeof fetch,
+    });
+
+    const checks = await checkForUpdates({
+      homeDir: path.join(root, "home"),
+      fetchImpl: githubFetch({
+        commitSha: "same123",
+        skillBody: "---\nname: github-hash\n---\n# Tampered\n",
+        extraFiles: {},
+      }) as typeof fetch,
+    });
+
+    expect(checks[0]?.classification).toBe("blocked");
+    expect(checks[0]?.reasons.join(" ")).toContain("commit SHA");
+  });
 });
 
 function githubFetch(options: {

@@ -105,3 +105,4 @@ The current CLI/runtime implements:
 - Lockfile storage of allowed permissions, risk level, content hash, and resolved commit.
 - Update classification as `no_update`, `safe`, `requires_confirmation`, or `blocked`.
 - Pinning to block automatic updates.
+- GitHub hash-anomaly blocking when content changes without a commit SHA change.
