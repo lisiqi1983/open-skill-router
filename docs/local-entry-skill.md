@@ -55,13 +55,14 @@ skillrouter install github:owner/repo/path@ref --agent generic --scope user
 
 ## Init Flow
 
-`skillrouter init` should eventually:
+`skillrouter init` now:
 
 - Create `~/.skillrouter/`.
-- Install or verify the CLI.
-- Optionally register `skillrouter serve-mcp`.
-- Install the `open-skill-router` entry skill into the chosen agent host.
-- Optionally index default source manifests.
+- Install the `open-skill-router` entry skill into the chosen generic agent host target.
+- Write the global or project lockfile.
+- Use the same cache, hash, and risk scan path as normal skill installs.
+
+MCP registration and default source manifest indexing are still future work.
 
 ## Why Not Only CLI
 

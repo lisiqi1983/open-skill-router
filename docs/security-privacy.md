@@ -92,3 +92,16 @@ Blocked from automatic update:
 
 MVP installs and loads skills but does not execute third-party skill scripts.
 Script execution can be designed later behind explicit sandbox permissions.
+
+## Implemented Safety Checks
+
+The current CLI/runtime implements:
+
+- Directory file listing with per-file SHA-256 hashes.
+- Stable directory content hash.
+- Script detection for Python, Node, shell, PowerShell, batch, and `scripts/` folders.
+- Permission inference for filesystem, network, runtime, and secret access.
+- Conservative risk scoring.
+- Lockfile storage of allowed permissions, risk level, content hash, and resolved commit.
+- Update classification as `no_update`, `safe`, `requires_confirmation`, or `blocked`.
+- Pinning to block automatic updates.

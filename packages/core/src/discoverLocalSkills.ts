@@ -3,10 +3,10 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import {
   defaultAgentCompatibility,
-  defaultSkillPermissions,
   parseSkillMd,
   type SkillReference,
 } from "@openskillrouter/skill-spec";
+import { scanSkillDirectory } from "@openskillrouter/security";
 import type { IndexedSkill, LocalSkillIndex } from "./types.js";
 
 const EXCLUDED_DIRS = new Set([
@@ -82,8 +82,8 @@ async function readSkill(
   const parsed = parseSkillMd(content, {
     fallbackName: path.basename(rootPath),
   });
+  const scan = await scanSkillDirectory(rootPath);
   const metadataHash = sha256(JSON.stringify(parsed.frontmatter));
-  const contentHash = `sha256:${sha256(content)}`;
   const locator = `local:${relativeSkillRoot || "."}`;
   const skill: SkillReference = {
     id: locator,
@@ -100,11 +100,11 @@ async function readSkill(
     inputFormats: parsed.inputFormats,
     outputFormats: parsed.outputFormats,
     languages: parsed.languages,
-    permissions: defaultSkillPermissions(),
-    riskLevel: "unknown",
+    permissions: scan.permissions,
+    riskLevel: scan.riskLevel,
     compatibility: defaultAgentCompatibility(),
     indexedAt,
-    contentHash,
+    contentHash: scan.contentHash,
     metadataHash,
     qualitySignals: {},
   };

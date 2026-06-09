@@ -92,3 +92,34 @@ export interface ParsedGitHubLocator {
   id: string;
   locator: string;
 }
+
+export interface InstalledSkill {
+  skillId: string;
+  locator: string;
+  sourceType: SourceType;
+  sourceUrl: string;
+  installedAt: string;
+  installedRef?: string;
+  installedCommitSha: string;
+  contentHash: string;
+  installPath: string;
+  cachePath: string;
+  agentHost: string;
+  scope: "user" | "project";
+  pinned: boolean;
+  allowedPermissions: SkillPermissions;
+  riskLevel: RiskLevel;
+  fileCount: number;
+  scriptCount: number;
+  metadata: {
+    name: string;
+    displayName?: string;
+    description: string;
+  };
+}
+
+export interface SkillRouterLockfile {
+  schemaVersion: "skillrouter.lock/v1";
+  updatedAt: string;
+  skills: InstalledSkill[];
+}

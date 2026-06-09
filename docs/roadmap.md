@@ -35,10 +35,10 @@ point while delegating real work to CLI/MCP runtime code.
 
 Deliverables:
 
-- `skills/open-skill-router/SKILL.md`.
-- Entry skill references for recommendation policy, command reference, and install safety.
-- `skillrouter init` design for installing the entry skill into a target agent.
-- Generic agent-host adapter target for Agent Skills-compatible directories.
+- [x] `skills/open-skill-router/SKILL.md`.
+- [x] Entry skill references for recommendation policy, command reference, and install safety.
+- [x] `skillrouter init` for installing the entry skill into a target agent.
+- [x] Generic agent-host adapter target for Agent Skills-compatible directories.
 
 Acceptance:
 
@@ -52,15 +52,15 @@ Goal: install a selected skill from GitHub into the local cache.
 
 Deliverables:
 
-- GitHub fetch adapter.
-- Ref-to-commit resolution.
-- Skill folder download.
-- Content hash.
-- Cache layout.
-- Global and project lockfile support.
-- `skillrouter inspect`.
-- `skillrouter install`.
-- `skillrouter list`.
+- [x] GitHub fetch adapter.
+- [x] Ref-to-commit resolution.
+- [x] Skill folder download.
+- [x] Content hash.
+- [x] Cache layout.
+- [x] Global and project lockfile support.
+- [x] `skillrouter inspect`.
+- [x] `skillrouter install`.
+- [x] `skillrouter list`.
 
 Acceptance:
 
@@ -78,15 +78,15 @@ Goal: make installs and updates safe by default.
 
 Deliverables:
 
-- File list scanner.
-- Script detection.
-- Permission inference.
-- Risk scorer.
-- Update checker.
-- Permission diff classifier.
-- `skillrouter update --check`.
-- `skillrouter update --safe`.
-- `skillrouter pin`.
+- [x] File list scanner.
+- [x] Script detection.
+- [x] Permission inference.
+- [x] Risk scorer.
+- [x] Update checker.
+- [x] Permission diff classifier.
+- [x] `skillrouter update --check`.
+- [x] `skillrouter update --safe`.
+- [x] `skillrouter pin`.
 
 Acceptance:
 

@@ -11,6 +11,7 @@
     "test": "pnpm -r --if-present test",
     "lint": "pnpm -r --if-present lint",
     "typecheck": "pnpm -r --if-present typecheck",
+    "test:smoke": "pnpm build && node scripts/smoke-m0-m2.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

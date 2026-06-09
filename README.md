@@ -63,18 +63,24 @@ docs/           Public architecture and operating documents.
 ## Early CLI Shape
 
 ```bash
+skillrouter init --agent generic --scope user
 skillrouter index ./examples/mock-skills
 skillrouter recommend "帮我生成一份产品发布 PPT"
+skillrouter inspect github:owner/repo/skills/example@main
 skillrouter install github:owner/repo/skills/example@main --agent generic --scope user
 skillrouter list
 skillrouter update --check
-skillrouter serve-mcp
+skillrouter update --safe
+skillrouter pin github:owner/repo/skills/example@main
 ```
 
 ## Development Status
 
-M0 development has started. The current local loop can parse mock `SKILL.md`
-files, build a project-local JSON index, and return basic recommendations.
+M0.5, M1, and M2 command-line paths are implemented for local and GitHub skill
+sources. The current runtime can parse `SKILL.md`, build a local index, generate
+candidate packs, inspect skill sources, install skills into a local cache and
+generic agent target, write lockfiles, infer permissions, score risk, check
+updates, and apply safe updates.
 
 Try it locally:
 
@@ -84,6 +90,11 @@ pnpm build
 node apps/cli/dist/index.js index examples/mock-skills
 node apps/cli/dist/index.js recommend "帮我生成一份产品发布 PPT"
 node apps/cli/dist/index.js recommend "分析专利交底书，评估授权概率，输出 PDF 报告" --candidate-pack --json
+node apps/cli/dist/index.js init --agent generic --scope user
+node apps/cli/dist/index.js inspect local:skills/open-skill-router
+node apps/cli/dist/index.js install local:skills/open-skill-router --agent generic --scope user
+node apps/cli/dist/index.js list
+node apps/cli/dist/index.js update --check
 ```
 
 Run checks:
@@ -91,6 +102,7 @@ Run checks:
 ```bash
 pnpm typecheck
 pnpm test
+pnpm test:smoke
 pnpm build
 ```
 

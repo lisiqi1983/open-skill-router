@@ -10,3 +10,12 @@ Security owns:
 - Update diff classification.
 
 MVP must not execute third-party skill scripts.
+
+Implemented behavior:
+
+- Directory scanning.
+- Per-file and directory hashing.
+- Script detection.
+- Permission inference.
+- Risk scoring.
+- Permission diff classification for updates.

@@ -1,8 +1,8 @@
 {
-  "name": "@openskillrouter/core",
+  "name": "@openskillrouter/cache",
   "version": "0.0.0",
   "private": true,
-  "description": "Core routing, indexing, and recommendation logic for Open Skill Router.",
+  "description": "Local cache, lockfiles, installation, and update checks for Open Skill Router.",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
@@ -17,11 +17,13 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "pnpm typecheck",
-    "test": "pnpm --filter @openskillrouter/skill-spec build && pnpm --filter @openskillrouter/security build && vitest run"
+    "test": "pnpm --filter @openskillrouter/skill-spec build && pnpm --filter @openskillrouter/security build && pnpm --filter @openskillrouter/adapters build && vitest run"
   },
   "dependencies": {
+    "@openskillrouter/adapters": "workspace:*",
     "@openskillrouter/security": "workspace:*",
-    "@openskillrouter/skill-spec": "workspace:*"
+    "@openskillrouter/skill-spec": "workspace:*",
+    "yaml": "^2.8.0"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

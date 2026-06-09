@@ -22,6 +22,9 @@ importers:
 
   apps/cli:
     dependencies:
+      "@openskillrouter/cache":
+        specifier: workspace:*
+        version: link:../../packages/cache
       "@openskillrouter/core":
         specifier: workspace:*
         version: link:../../packages/core
@@ -39,7 +42,67 @@ importers:
         specifier: ^3.2.0
         version: 3.2.6(@types/node@24.13.1)(yaml@2.9.0)
 
+  packages/adapters:
+    dependencies:
+      "@openskillrouter/skill-spec":
+        specifier: workspace:*
+        version: link:../skill-spec
+    devDependencies:
+      "@types/node":
+        specifier: ^24.0.0
+        version: 24.13.1
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.0
+        version: 3.2.6(@types/node@24.13.1)(yaml@2.9.0)
+
+  packages/cache:
+    dependencies:
+      "@openskillrouter/adapters":
+        specifier: workspace:*
+        version: link:../adapters
+      "@openskillrouter/security":
+        specifier: workspace:*
+        version: link:../security
+      "@openskillrouter/skill-spec":
+        specifier: workspace:*
+        version: link:../skill-spec
+      yaml:
+        specifier: ^2.8.0
+        version: 2.9.0
+    devDependencies:
+      "@types/node":
+        specifier: ^24.0.0
+        version: 24.13.1
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.0
+        version: 3.2.6(@types/node@24.13.1)(yaml@2.9.0)
+
   packages/core:
+    dependencies:
+      "@openskillrouter/security":
+        specifier: workspace:*
+        version: link:../security
+      "@openskillrouter/skill-spec":
+        specifier: workspace:*
+        version: link:../skill-spec
+    devDependencies:
+      "@types/node":
+        specifier: ^24.0.0
+        version: 24.13.1
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.0
+        version: 3.2.6(@types/node@24.13.1)(yaml@2.9.0)
+
+  packages/security:
     dependencies:
       "@openskillrouter/skill-spec":
         specifier: workspace:*

@@ -1,23 +1,26 @@
 {
-  "name": "@openskillrouter/cli",
+  "name": "@openskillrouter/adapters",
   "version": "0.0.0",
   "private": true,
-  "description": "Command-line interface for Open Skill Router.",
+  "description": "Source and agent-host adapters for Open Skill Router.",
   "license": "MIT",
   "type": "module",
-  "bin": {
-    "skillrouter": "./dist/index.js"
+  "main": "./dist/index.js",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "pnpm typecheck",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run"
   },
   "dependencies": {
-    "@openskillrouter/cache": "workspace:*",
-    "@openskillrouter/core": "workspace:*",
-    "commander": "^14.0.0"
+    "@openskillrouter/skill-spec": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
