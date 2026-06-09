@@ -34,4 +34,3 @@ Examples:
 
 When a local note becomes stable and useful to contributors, promote it into
 `docs/` and commit the cleaned version.
-

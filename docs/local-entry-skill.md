@@ -79,4 +79,3 @@ teach an agent when to call it. The skill-shaped entry point fills that gap.
 Prompt-only logic is hard to test and hard to secure. The entry skill should
 describe the routing policy and tool usage, while deterministic code handles
 source fetching, hashing, cache writes, update diffs, and install plans.
-

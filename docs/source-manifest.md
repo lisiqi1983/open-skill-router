@@ -52,4 +52,3 @@ skillrouter index-source github:lisiqi1983/skillrouter-sources@main
 - They may add curated tags and notes.
 - They do not embed third-party skill package contents.
 - They should be hashable and cacheable.
-

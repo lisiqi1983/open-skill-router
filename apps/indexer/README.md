@@ -13,4 +13,3 @@ Initial outputs:
 - JSONL metadata snapshots.
 - Source metadata.
 - Checksums.
-

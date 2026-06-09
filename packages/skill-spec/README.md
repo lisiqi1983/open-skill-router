@@ -7,4 +7,3 @@ Skill Spec owns:
 - Skill reference schemas.
 - Task profile schemas.
 - Permission data types.
-

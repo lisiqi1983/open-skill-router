@@ -94,4 +94,3 @@ dist/index/sources.json
 dist/index/checksums.txt
 dist/index/metadata.json
 ```
-

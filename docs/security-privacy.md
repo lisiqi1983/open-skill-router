@@ -92,4 +92,3 @@ Blocked from automatic update:
 
 MVP installs and loads skills but does not execute third-party skill scripts.
 Script execution can be designed later behind explicit sandbox permissions.
-

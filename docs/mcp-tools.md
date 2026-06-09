@@ -52,4 +52,3 @@ Checks for updates and classifies them as safe, confirmation-required, or blocke
 
 Records whether a recommendation was accepted and whether it helped, without
 storing sensitive task content by default.
-

@@ -8,16 +8,16 @@ Goal: recommend skills from a local directory without cloud services.
 
 Deliverables:
 
-- Monorepo scaffold.
-- `SKILL.md` parser.
-- Local directory discovery for `**/SKILL.md`.
-- GitHub locator parser.
-- Local index storage.
-- Basic lexical recommendation.
-- Candidate pack data model.
-- `skillrouter index`.
-- `skillrouter recommend`.
-- Mock skills and integration tests.
+- [x] Monorepo scaffold.
+- [x] `SKILL.md` parser.
+- [x] Local directory discovery for `**/SKILL.md`.
+- [x] GitHub locator parser.
+- [x] Local index storage.
+- [x] Basic lexical recommendation.
+- [x] Candidate pack data model.
+- [x] `skillrouter index`.
+- [x] `skillrouter recommend`.
+- [x] Mock skills and integration tests.
 
 Acceptance:
 

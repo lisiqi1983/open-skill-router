@@ -150,4 +150,3 @@ Open Skill Router should be model-native without being model-only.
 The router retrieves and packages candidates safely. The user's own model can
 make a richer judgment about fit. Deterministic code still decides whether a
 skill can be installed or updated safely.
-

@@ -73,7 +73,28 @@ skillrouter serve-mcp
 
 ## Development Status
 
-This repository is being initialized. See:
+M0 development has started. The current local loop can parse mock `SKILL.md`
+files, build a project-local JSON index, and return basic recommendations.
+
+Try it locally:
+
+```bash
+pnpm install
+pnpm build
+node apps/cli/dist/index.js index examples/mock-skills
+node apps/cli/dist/index.js recommend "帮我生成一份产品发布 PPT"
+node apps/cli/dist/index.js recommend "分析专利交底书，评估授权概率，输出 PDF 报告" --candidate-pack --json
+```
+
+Run checks:
+
+```bash
+pnpm typecheck
+pnpm test
+pnpm build
+```
+
+See:
 
 - [Architecture](docs/architecture.md)
 - [Roadmap](docs/roadmap.md)

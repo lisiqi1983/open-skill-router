@@ -12,4 +12,3 @@ Initial tools:
 - `record_feedback`
 
 The server should call the same core modules used by the CLI.
-

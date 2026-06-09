@@ -14,4 +14,3 @@ Initial commands:
 - `skillrouter update`
 - `skillrouter pin`
 - `skillrouter serve-mcp`
-

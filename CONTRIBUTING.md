@@ -28,4 +28,3 @@ share the same core logic.
 
 If you find a security issue, please open a private advisory or contact the
 maintainers before publishing details.
-
