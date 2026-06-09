@@ -1,0 +1,22 @@
+node_modules/
+dist/
+build/
+coverage/
+.turbo/
+.cache/
+.pnpm-store/
+
+.env
+.env.*
+!.env.example
+
+*.log
+*.tsbuildinfo
+
+# Local SkillRouter runtime state
+.skillrouter/
+*.skillrouter.lock.local
+
+# Local-only engineering notes, not intended for the public GitHub repository
+_local-dev/
+

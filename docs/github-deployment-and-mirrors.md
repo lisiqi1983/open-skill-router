@@ -1,0 +1,97 @@
+# GitHub Deployment and Mirrors
+
+Open Skill Router should use GitHub as the primary public home while keeping the
+router/source distinction clear.
+
+## Primary GitHub Repository
+
+Recommended repository:
+
+```text
+github.com/lisiqi1983/open-skill-router
+```
+
+Primary contents:
+
+- Source code.
+- Public docs.
+- Example source manifests.
+- Example mock skills for tests.
+- GitHub Actions workflows.
+- Release artifacts.
+- Static index snapshots.
+
+## What We Mirror
+
+Mirror:
+
+- Repository source code.
+- Documentation site.
+- `skillrouter.source.yaml` files.
+- Normalized metadata snapshots.
+- Checksums.
+- Release packages.
+- npm package metadata through normal package registries.
+
+Do not mirror:
+
+- Third-party skill package bodies unless they are explicitly part of this repository.
+- User task logs.
+- User feedback with sensitive text.
+- Local cache contents.
+
+## Mirror Strategy
+
+### Code Mirrors
+
+Use GitHub as upstream, then optionally mirror to:
+
+- Gitee.
+- GitCode.
+- AtomGit.
+- Other read-only Git hosts.
+
+### Static Index Mirrors
+
+Publish index snapshots to:
+
+- GitHub Pages.
+- GitHub Releases.
+- jsDelivr through npm or GitHub release assets.
+- Cloudflare Pages.
+- Regional static hosting if needed.
+
+### Package Mirrors
+
+Publish packages to npm first. Users in slower regions can consume through npm
+registry mirrors.
+
+## Recommended URL Priority
+
+The CLI should support multiple index sources and fail over in order:
+
+```text
+1. User-configured local index.
+2. User-configured mirror URL.
+3. GitHub Pages canonical index.
+4. GitHub release snapshot.
+5. Direct GitHub source lookup.
+```
+
+## GitHub Actions Plan
+
+Initial workflows:
+
+- `ci.yml`: install, lint, typecheck, test.
+- `release.yml`: build packages and create GitHub release artifacts.
+- `publish-index.yml`: build static index snapshots and publish to Pages.
+
+Static index files:
+
+```text
+dist/index/skills.jsonl
+dist/index/sources.json
+dist/index/checksums.txt
+dist/index/metadata.json
+```
+
