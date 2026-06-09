@@ -14,6 +14,7 @@ Deliverables:
 - GitHub locator parser.
 - Local index storage.
 - Basic lexical recommendation.
+- Candidate pack data model.
 - `skillrouter index`.
 - `skillrouter recommend`.
 - Mock skills and integration tests.
@@ -26,6 +27,24 @@ skillrouter recommend "帮我生成 PPT"
 ```
 
 The CLI returns top candidates with score, reason, source, and risk.
+
+## M0.5: Universal Entry Skill
+
+Goal: make Open Skill Router available to agents as a normal skill-shaped entry
+point while delegating real work to CLI/MCP runtime code.
+
+Deliverables:
+
+- `skills/open-skill-router/SKILL.md`.
+- Entry skill references for recommendation policy, command reference, and install safety.
+- `skillrouter init` design for installing the entry skill into a target agent.
+- Generic agent-host adapter target for Agent Skills-compatible directories.
+
+Acceptance:
+
+An agent with the entry skill installed can discover that it should call
+SkillRouter when the user asks for skill discovery, skill installation, or a task
+that appears to need a specialized skill.
 
 ## M1: GitHub Install and Cache
 
@@ -94,6 +113,25 @@ Acceptance:
 An MCP client can call `recommend_skills`, inspect the result, and install a
 selected skill through the same safety checks as the CLI.
 
+## M3.5: Model-Assisted Rerank
+
+Goal: let the user's current model compare bounded candidate skill documents
+while deterministic code still owns safety and installation.
+
+Deliverables:
+
+- `RecommendationMode`: `fast_metadata`, `full_skill_rerank`, and `strict_local`.
+- `CandidatePack` schema with bounded `SKILL.md` excerpts, file tree, permissions, and risk summary.
+- JSON-schema rerank output contract.
+- Prompt injection guardrails for untrusted candidate skill documents.
+- Score merging between deterministic ranking and model rerank.
+
+Acceptance:
+
+`recommend_skills` can return either final recommendations or a candidate pack
+that the calling agent can rerank, and the final recommendation still passes the
+same security gate before installation.
+
 ## M4: Static Index Publishing
 
 Goal: publish reusable skill metadata without operating a database service.
@@ -131,4 +169,3 @@ Acceptance:
 
 The CLI can call an API endpoint for recommendations while still supporting
 strict local mode.
-

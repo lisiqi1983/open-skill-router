@@ -78,5 +78,6 @@ This repository is being initialized. See:
 - [Architecture](docs/architecture.md)
 - [Roadmap](docs/roadmap.md)
 - [Security and Privacy](docs/security-privacy.md)
+- [Local Entry Skill](docs/local-entry-skill.md)
+- [Model-Assisted Recommendation](docs/model-assisted-recommendation.md)
 - [GitHub Deployment and Mirrors](docs/github-deployment-and-mirrors.md)
-

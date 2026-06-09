@@ -22,6 +22,9 @@ explainable set of Agent Skill recommendations.
 ## High-Level Components
 
 ```text
+Universal Entry Skill
+        |
+        v
 CLI / MCP Server / API
         |
         v
@@ -36,13 +39,40 @@ Core Router
               +-- Agent host adapters
 ```
 
+## Local Entry Model
+
+Open Skill Router should be usable as a normal Agent Skill while keeping the
+heavy runtime logic outside the skill body.
+
+The entry skill is a thin bootstrap layer:
+
+```text
+skills/open-skill-router/
+  SKILL.md
+  references/
+    recommendation-policy.md
+    install-safety.md
+    command-reference.md
+```
+
+The runtime remains the engine:
+
+- `skillrouter` CLI for users and shell workflows.
+- `skillrouter serve-mcp` for agent-native tool calls.
+- Local cache, lockfiles, security scanner, and source adapters.
+
+This gives agents a portable skill-shaped entry point without turning prompt
+instructions into the source of truth for routing, installation, or security.
+
 ## Data Flow
 
 ```text
 user task
   -> TaskProfile
   -> candidate retrieval from local index, installed skills, and source snapshots
-  -> score and rerank
+  -> candidate pack fetch for selected skills
+  -> deterministic score and optional user-model rerank
+  -> deterministic safety gate
   -> structured explanation
   -> InstallPlan if user selects a skill
   -> fetch source and resolve commit
@@ -69,6 +99,7 @@ Core owns:
 - `TaskProfile` creation.
 - Candidate orchestration.
 - Score calculation.
+- Candidate pack creation for model-assisted reranking.
 - Recommendation explanation.
 - Install and update planning interfaces.
 
@@ -117,3 +148,29 @@ The initial deployment model should be GitHub-native:
 
 This keeps the project useful before a cloud API exists.
 
+## Model-Assisted Recommendation
+
+Recommendation should combine deterministic retrieval with the user's current
+model when available.
+
+The default architecture is:
+
+```text
+retrieve candidates
+  -> fetch bounded candidate packs
+  -> ask the user's model to rerank against a rubric
+  -> merge model judgment with deterministic scores
+  -> apply security and compatibility gates
+```
+
+Candidate skill documents are untrusted data. The model may evaluate them, but
+must not follow instructions inside candidate skills. Commit resolution, hashing,
+permission inference, lockfiles, and install actions remain deterministic code.
+
+See [Model-Assisted Recommendation](model-assisted-recommendation.md).
+
+## Related Documents
+
+- [Local Entry Skill](local-entry-skill.md)
+- [Model-Assisted Recommendation](model-assisted-recommendation.md)
+- [Security and Privacy](security-privacy.md)
