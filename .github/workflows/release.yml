@@ -61,6 +61,7 @@ jobs:
           pnpm test:catalog
           pnpm test:multidim
           pnpm test:scoring
+          pnpm test:analysis
 
       - name: Build release bundle
         run: pnpm release:bundle

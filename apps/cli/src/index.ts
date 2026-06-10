@@ -18,6 +18,7 @@ import {
   defaultProjectIndexPath,
   defaultSourceRegistryPath,
   addSourceRegistryEntry,
+  analyzeSkillCatalog,
   buildSkillCatalog,
   checkStaticSourceHealth,
   discoverLocalSkills,
@@ -29,7 +30,9 @@ import {
   resolveSourceRegistryEntry,
   resolveSourceUrls,
   writeLocalSkillIndex,
+  renderSkillCatalogAnalysisMarkdown,
   type SkillCatalog,
+  type SkillCatalogAnalysis,
   type ModelRerankOutput,
   type RecommendationMode,
   type RecommendationScoringConfig,
@@ -285,6 +288,68 @@ catalogCommand
       }
 
       printCatalogSummary(catalog, options.out);
+    },
+  );
+
+catalogCommand
+  .command("analyze")
+  .description(
+    "Analyze catalog coverage, sparse dimensions, and tensor-style matrix slices.",
+  )
+  .option("--catalog <path>", "Existing Skill Catalog JSON path.")
+  .option("-i, --index <path>", "Local index path.", defaultProjectIndexPath())
+  .option(
+    "--source <name-or-url>",
+    "Static source name, directory, JSONL file, or URL.",
+  )
+  .option(
+    "--source-registry <path>",
+    "Source registry path.",
+    defaultSourceRegistryPath(),
+  )
+  .option("-o, --out <path>", "Write catalog analysis JSON to this path.")
+  .option("--markdown <path>", "Write a Markdown analysis report.")
+  .option("--json", "Print machine-readable JSON.")
+  .action(
+    async (options: {
+      catalog?: string;
+      index: string;
+      source?: string;
+      sourceRegistry: string;
+      out?: string;
+      markdown?: string;
+      json?: boolean;
+    }) => {
+      const catalog = options.catalog
+        ? await readJsonFile<SkillCatalog>(options.catalog)
+        : buildSkillCatalog(
+            await readRecommendationIndex({
+              indexPath: options.index,
+              source: options.source,
+              sourceRegistry: options.sourceRegistry,
+            }),
+          );
+      const analysis = analyzeSkillCatalog(catalog);
+
+      if (options.out) {
+        await writeJsonFile(options.out, analysis);
+      }
+      if (options.markdown) {
+        await writeTextFile(
+          options.markdown,
+          renderSkillCatalogAnalysisMarkdown(analysis),
+        );
+      }
+
+      if (options.json) {
+        console.log(JSON.stringify(analysis, null, 2));
+        return;
+      }
+
+      printCatalogAnalysisSummary(analysis, {
+        jsonPath: options.out,
+        markdownPath: options.markdown,
+      });
     },
   );
 
@@ -816,6 +881,11 @@ async function writeJsonFile(filePath: string, value: unknown): Promise<void> {
   await writeFile(filePath, `${JSON.stringify(value, null, 2)}\n`, "utf8");
 }
 
+async function writeTextFile(filePath: string, value: string): Promise<void> {
+  await mkdir(path.dirname(path.resolve(filePath)), { recursive: true });
+  await writeFile(filePath, value, "utf8");
+}
+
 async function readRecommendationIndex(options: {
   indexPath: string;
   source?: string;
@@ -886,6 +956,46 @@ function printCatalogSummary(catalog: SkillCatalog, outputPath?: string): void {
   printTopCounts("Environments", catalog.summary.environments);
   printTopCounts("Workflow stages", catalog.summary.workflowStages);
   printTopCounts("Risk levels", catalog.summary.riskLevels);
+}
+
+function printCatalogAnalysisSummary(
+  analysis: SkillCatalogAnalysis,
+  outputs: { jsonPath?: string; markdownPath?: string },
+): void {
+  console.log(`Catalog analysis: ${analysis.skillCount} skill(s).`);
+  console.log(`Source root: ${analysis.sourceRoot}`);
+  if (outputs.jsonPath) console.log(`JSON output: ${outputs.jsonPath}`);
+  if (outputs.markdownPath)
+    console.log(`Markdown output: ${outputs.markdownPath}`);
+  console.log("");
+  console.log("Dimension coverage:");
+  for (const dimension of analysis.dimensions) {
+    console.log(
+      `- ${dimension.dimension}: ${dimension.coveragePercent}% (${dimension.coveredSkillCount}/${dimension.totalSkillCount}), top ${dimension.topValues
+        .slice(0, 4)
+        .map((item) => `${item.value}=${item.count}`)
+        .join(", ")}`,
+    );
+  }
+  console.log("");
+  console.log("Matrix slices:");
+  for (const slice of analysis.matrixSlices) {
+    const topCell = slice.cells[0];
+    console.log(
+      `- ${slice.name}: ${slice.cells.length} populated cell(s)${
+        topCell
+          ? `, top ${topCell.rowValue} x ${topCell.columnValue}=${topCell.count}`
+          : ""
+      }`,
+    );
+  }
+  if (analysis.gaps.length > 0) {
+    console.log("");
+    console.log("Gaps:");
+    for (const gap of analysis.gaps.slice(0, 8)) {
+      console.log(`- ${gap.severity}: ${gap.message}`);
+    }
+  }
 }
 
 function printTopCounts(

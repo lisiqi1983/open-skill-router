@@ -5,6 +5,7 @@ export * from "./modelRerank.js";
 export * from "./recommend.js";
 export * from "./scoring.js";
 export * from "./skillCatalog.js";
+export * from "./skillCatalogAnalysis.js";
 export * from "./sourceManifest.js";
 export * from "./sourceRegistry.js";
 export * from "./staticSnapshot.js";

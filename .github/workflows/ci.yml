@@ -68,3 +68,6 @@ jobs:
 
       - name: Scoring config smoke
         run: pnpm test:scoring
+
+      - name: Catalog analysis smoke
+        run: pnpm test:analysis

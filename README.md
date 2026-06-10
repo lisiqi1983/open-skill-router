@@ -70,11 +70,13 @@ skillrouter recommend "帮我生成一份产品发布 PPT" --candidate-pack --js
 skillrouter recommend "帮我生成一份产品发布 PPT" --model-rerank rerank.json
 skillrouter recommend "请审查 GitHub PR 中的 TypeScript 代码变更" --scoring scoring.json
 skillrouter catalog build --index .skillrouter/index.json --out .skillrouter/catalog.json
+skillrouter catalog analyze --index .skillrouter/index.json --markdown .skillrouter/catalog-analysis.md
 skillrouter index-source ./skillrouter.source.yaml --out ./public/index
 skillrouter source add ./public/index public --mirror https://mirror.example.com/index/
 skillrouter source health public
 skillrouter recommend "帮我生成一份产品发布 PPT" --source public
 skillrouter catalog build --source public --json
+skillrouter catalog analyze --source public --json
 open-skill-router-api serve --source ./public/index --port 8765
 skillrouter recommend "帮我生成一份产品发布 PPT" --api http://127.0.0.1:8765
 skillrouter inspect github:owner/repo/skills/example@main
@@ -88,7 +90,7 @@ skillrouter serve-mcp
 
 ## Development Status
 
-M0.5 through M9 paths are implemented for local and GitHub skill sources. The
+M0.5 through M10 paths are implemented for local and GitHub skill sources. The
 current runtime can parse `SKILL.md`, build a local index, generate candidate
 packs with model-rerank contracts, merge caller-provided model rerank JSON with
 deterministic scores, preserve safety gates, publish static JSONL snapshots with
@@ -99,7 +101,9 @@ local cache and generic agent target, write lockfiles, infer permissions, score
 risk, check updates, apply safe updates, expose the same flow to local agents
 through MCP tools, build verified release bundles for GitHub Releases and static
 mirrors, and generate a unified multidimensional catalog for local or remote
-skills. Recommendation now uses catalog-aware multidimensional scoring across
+skills, and analyze catalog coverage, sparse dimensions, tensor-style matrix
+slices, and compact skill profiles for local or remote sources. Recommendation
+now uses catalog-aware multidimensional scoring across
 metadata, intent, domain, input/output, environment, workflow stage, quality, and
 safety signals, and these scoring weights can be configured per CLI/API/MCP
 request.
@@ -116,11 +120,13 @@ node apps/cli/dist/index.js recommend "请审查 GitHub PR 中的 TypeScript 代
 node apps/cli/dist/index.js recommend "分析专利交底书，评估授权概率，输出 PDF 报告" --candidate-pack --json
 node apps/cli/dist/index.js recommend "帮我生成一份产品发布 PPT" --model-rerank rerank.json --json
 node apps/cli/dist/index.js catalog build --index .skillrouter/index.json --out .skillrouter/catalog.json
+node apps/cli/dist/index.js catalog analyze --index .skillrouter/index.json --markdown .skillrouter/catalog-analysis.md
 node apps/cli/dist/index.js index-source skillrouter.source.yaml --out public/open-skill-router/index
 node apps/cli/dist/index.js source add public/open-skill-router/index public --mirror https://mirror.example.com/open-skill-router/index/
 node apps/cli/dist/index.js source health public
 node apps/cli/dist/index.js recommend "帮我生成一份产品发布 PPT" --source public
 node apps/cli/dist/index.js catalog build --source public --json
+node apps/cli/dist/index.js catalog analyze --source public --json
 node apps/api/dist/index.js serve --source public/open-skill-router/index --port 8765
 node apps/cli/dist/index.js recommend "帮我生成一份产品发布 PPT" --api http://127.0.0.1:8765
 pnpm test:release
@@ -156,6 +162,7 @@ pnpm test:release
 pnpm test:catalog
 pnpm test:multidim
 pnpm test:scoring
+pnpm test:analysis
 pnpm build
 ```
 
@@ -169,6 +176,7 @@ See:
 - [HTTP API](docs/api.md)
 - [Release Packaging](docs/release.md)
 - [Unified Skill Catalog](docs/skill-catalog.md)
+- [Catalog Analysis](docs/catalog-analysis.md)
 - [Recommendation Scoring](docs/scoring.md)
 - [Model-Assisted Recommendation](docs/model-assisted-recommendation.md)
 - [GitHub Deployment and Mirrors](docs/github-deployment-and-mirrors.md)

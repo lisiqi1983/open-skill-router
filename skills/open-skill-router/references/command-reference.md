@@ -44,11 +44,17 @@ Build a multidimensional catalog from local or remote skills:
 skillrouter catalog build --index .skillrouter/index.json --out .skillrouter/catalog.json
 skillrouter catalog build --source public --json
 skillrouter catalog build --source https://example.com/open-skill-router/index/ --json
+skillrouter catalog analyze --index .skillrouter/index.json --markdown .skillrouter/catalog-analysis.md
+skillrouter catalog analyze --source public --json
 ```
 
 Catalogs summarize skills into shared dimensions: domains, intents, inputs,
 outputs, environments, workflow stages, languages, risk levels, and source
 types.
+
+Use `catalog analyze` when the user wants to review real Skill coverage, sparse
+metadata, tensor-style dimension interactions, or a human-readable Skill research
+report before tuning recommendation weights.
 
 Inspect a skill:
 

@@ -351,3 +351,34 @@ recommendations. Weights are validated and normalized by the core runtime.
 
 Status: implemented. This is the configuration layer needed before automatic
 feedback-tuned scoring.
+
+## M10: Catalog Analysis and Skill Research
+
+Goal: make real local and remote Skill research visible through a stable
+analysis report before feedback learning or vector infrastructure is added.
+
+Deliverables:
+
+- [x] `skillrouter.catalog-analysis/v1` schema.
+- [x] Dimension coverage analysis for domains, intents, capabilities, inputs, outputs, environments, workflow stages, languages, risk, and source type.
+- [x] Tensor-style matrix slices for `domain x output`, `domain x workflow`, `input x output`, and `environment x risk`.
+- [x] Compact per-skill vector profiles for quick human review.
+- [x] Gap detection for missing dimensions, sparse values, unknown risk, and high-risk skills.
+- [x] Markdown report renderer.
+- [x] CLI `skillrouter catalog analyze`.
+- [x] Local index, remote static source, and existing catalog input support.
+- [x] M10 smoke test covering local and HTTP remote catalog analysis.
+
+Acceptance:
+
+```bash
+skillrouter catalog analyze --index .skillrouter/index.json --markdown .skillrouter/catalog-analysis.md
+skillrouter catalog analyze --source https://example.com/open-skill-router/index/ --json
+pnpm test:analysis
+```
+
+Local and remote skills produce the same `skillrouter.catalog-analysis/v1`
+shape, including dimension coverage, matrix slices, skill profiles, and gaps.
+
+Status: implemented. This is the observability layer for future tensor-style
+interaction scoring and feedback-tuned weights.

@@ -86,9 +86,11 @@ and merges with the deterministic score after the candidate set is selected.
 M9 makes these deterministic weights configurable through
 `skillrouter.scoring/v1`.
 
-This can later evolve into a tensor-style approximation where interactions such
-as `domain x output`, `input x workflow`, and `risk x environment` are scored
-explicitly.
+M10 adds `skillrouter.catalog-analysis/v1`, a read-only analysis layer that
+summarizes dimension coverage, sparse values, compact skill profiles, and
+tensor-style matrix slices such as `domain x output`, `domain x workflow`,
+`input x output`, and `environment x risk`. These slices make it easier to see
+which interactions are ready to become explicit scoring terms.
 
 ## CLI Usage
 
@@ -108,3 +110,14 @@ skillrouter catalog build --source https://example.com/open-skill-router/index/ 
 ```
 
 The JSON output uses schema `skillrouter.catalog/v1`.
+
+Analyze catalog coverage and tensor-style slices:
+
+```bash
+skillrouter catalog analyze --index .skillrouter/index.json --markdown .skillrouter/catalog-analysis.md
+skillrouter catalog analyze --source public --json
+skillrouter catalog analyze --catalog .skillrouter/catalog.json --out .skillrouter/catalog-analysis.json
+```
+
+The analysis output uses schema `skillrouter.catalog-analysis/v1`. See
+[Catalog Analysis](catalog-analysis.md) for the full report shape.

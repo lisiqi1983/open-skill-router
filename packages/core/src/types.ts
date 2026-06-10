@@ -91,6 +91,83 @@ export interface SkillCatalogCount {
   count: number;
 }
 
+export type SkillCatalogAnalysisDimension =
+  | "domains"
+  | "intents"
+  | "capabilities"
+  | "inputFormats"
+  | "outputFormats"
+  | "environments"
+  | "workflowStages"
+  | "languages"
+  | "riskLevel"
+  | "sourceType";
+
+export interface SkillCatalogAnalysis {
+  schemaVersion: "skillrouter.catalog-analysis/v1";
+  generatedAt: string;
+  sourceRoot: string;
+  skillCount: number;
+  dimensions: SkillCatalogDimensionAnalysis[];
+  matrixSlices: SkillCatalogMatrixSlice[];
+  skillProfiles: SkillCatalogSkillProfile[];
+  gaps: SkillCatalogGap[];
+}
+
+export interface SkillCatalogDimensionAnalysis {
+  dimension: SkillCatalogAnalysisDimension;
+  coveredSkillCount: number;
+  totalSkillCount: number;
+  coveragePercent: number;
+  distinctValueCount: number;
+  topValues: SkillCatalogCount[];
+  singletonValues: SkillCatalogCount[];
+  unclassifiedSkillIds: string[];
+}
+
+export interface SkillCatalogMatrixSlice {
+  name: string;
+  rowDimension: SkillCatalogAnalysisDimension;
+  columnDimension: SkillCatalogAnalysisDimension;
+  cells: SkillCatalogMatrixCell[];
+}
+
+export interface SkillCatalogMatrixCell {
+  rowValue: string;
+  columnValue: string;
+  count: number;
+  skillIds: string[];
+}
+
+export interface SkillCatalogSkillProfile {
+  skillId: string;
+  name: string;
+  displayName?: string;
+  sourceType: SkillReference["sourceType"];
+  riskLevel: RiskLevel;
+  qualityScore: number;
+  primaryDimensions: {
+    domains: string[];
+    intents: string[];
+    capabilities: string[];
+    inputFormats: string[];
+    outputFormats: string[];
+    environments: string[];
+    workflowStages: string[];
+    languages: string[];
+  };
+  vectorKey: string;
+}
+
+export interface SkillCatalogGap {
+  type: "missing_dimension" | "sparse_dimension" | "unknown_risk" | "high_risk";
+  severity: "info" | "warning";
+  message: string;
+  dimension?: SkillCatalogAnalysisDimension;
+  value?: string;
+  skillIds: string[];
+}
+
 export interface SourceManifest {
   schema_version: "skillrouter.source/v1";
   name: string;
