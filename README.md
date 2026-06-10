@@ -72,15 +72,17 @@ skillrouter list
 skillrouter update --check
 skillrouter update --safe
 skillrouter pin github:owner/repo/skills/example@main
+skillrouter serve-mcp
 ```
 
 ## Development Status
 
-M0.5, M1, and M2 command-line paths are implemented for local and GitHub skill
-sources. The current runtime can parse `SKILL.md`, build a local index, generate
+M0.5, M1, M2, and M3 paths are implemented for local and GitHub skill sources.
+The current runtime can parse `SKILL.md`, build a local index, generate
 candidate packs, inspect skill sources, install skills into a local cache and
 generic agent target, write lockfiles, infer permissions, score risk, check
-updates, and apply safe updates.
+updates, apply safe updates, and expose the same flow to local agents through
+MCP tools.
 
 Try it locally:
 
@@ -95,7 +97,17 @@ node apps/cli/dist/index.js inspect local:skills/open-skill-router
 node apps/cli/dist/index.js install local:skills/open-skill-router --agent generic --scope user
 node apps/cli/dist/index.js list
 node apps/cli/dist/index.js update --check
+node apps/cli/dist/index.js serve-mcp
 ```
+
+MCP clients can also start the built server directly:
+
+```bash
+node apps/mcp-server/dist/index.js
+```
+
+The M3 MCP tools are `recommend_skills`, `inspect_skill`, `install_skill`,
+`load_skill`, `update_skill`, and `record_feedback`.
 
 Run checks:
 
@@ -103,6 +115,7 @@ Run checks:
 pnpm typecheck
 pnpm test
 pnpm test:smoke
+pnpm test:mcp
 pnpm build
 ```
 
@@ -112,5 +125,6 @@ See:
 - [Roadmap](docs/roadmap.md)
 - [Security and Privacy](docs/security-privacy.md)
 - [Local Entry Skill](docs/local-entry-skill.md)
+- [MCP Tools](docs/mcp-tools.md)
 - [Model-Assisted Recommendation](docs/model-assisted-recommendation.md)
 - [GitHub Deployment and Mirrors](docs/github-deployment-and-mirrors.md)

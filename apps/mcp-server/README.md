@@ -2,7 +2,7 @@
 
 The MCP server exposes Open Skill Router to local agents.
 
-Initial tools:
+Implemented tools:
 
 - `recommend_skills`
 - `inspect_skill`
@@ -11,4 +11,42 @@ Initial tools:
 - `update_skill`
 - `record_feedback`
 
-The server should call the same core modules used by the CLI.
+The server calls the same core/cache/security modules used by the CLI. MCP is a
+transport layer, not a separate install path.
+
+## Local Run
+
+Build the workspace:
+
+```bash
+pnpm build
+```
+
+Start over stdio:
+
+```bash
+node apps/mcp-server/dist/index.js
+```
+
+The CLI also exposes the same server:
+
+```bash
+node apps/cli/dist/index.js serve-mcp
+```
+
+## Tests
+
+```bash
+pnpm --filter @openskillrouter/mcp-server test
+pnpm test:mcp
+```
+
+The package test uses the MCP SDK in-memory transport. `pnpm test:mcp` starts a
+real stdio server process and verifies tool listing plus a `recommend_skills`
+call.
+
+## Tool Handler Boundary
+
+`src/server.ts` owns MCP schemas and tool registration.
+`src/toolHandlers.ts` owns router behavior and can be tested without MCP
+transport.

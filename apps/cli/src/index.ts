@@ -403,6 +403,14 @@ program
     },
   );
 
+program
+  .command("serve-mcp")
+  .description("Start the Open Skill Router MCP server over stdio.")
+  .action(async () => {
+    const { startStdioServer } = await import("@openskillrouter/mcp-server");
+    await startStdioServer();
+  });
+
 program.parseAsync(process.argv).catch((error: unknown) => {
   const message = error instanceof Error ? error.message : String(error);
   console.error(`skillrouter: ${message}`);

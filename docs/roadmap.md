@@ -100,18 +100,23 @@ Goal: expose the router to local agents.
 
 Deliverables:
 
-- `skillrouter serve-mcp`.
-- `recommend_skills`.
-- `inspect_skill`.
-- `install_skill`.
-- `load_skill`.
-- `update_skill`.
-- `record_feedback`.
+- [x] `skillrouter serve-mcp`.
+- [x] `recommend_skills`.
+- [x] `inspect_skill`.
+- [x] `install_skill`.
+- [x] `load_skill`.
+- [x] `update_skill`.
+- [x] `record_feedback`.
+- [x] MCP protocol unit test with in-memory transport.
+- [x] Stdio smoke test with a real MCP client and server process.
 
 Acceptance:
 
 An MCP client can call `recommend_skills`, inspect the result, and install a
 selected skill through the same safety checks as the CLI.
+
+Status: implemented in `apps/mcp-server` and exposed through
+`skillrouter serve-mcp`.
 
 ## M3.5: Model-Assisted Rerank
 
@@ -125,6 +130,10 @@ Deliverables:
 - JSON-schema rerank output contract.
 - Prompt injection guardrails for untrusted candidate skill documents.
 - Score merging between deterministic ranking and model rerank.
+
+M3 already exposes candidate packs through `recommend_skills` when callers set
+`include_candidate_pack`. M3.5 will make the model-rerank loop first-class in
+the router runtime instead of leaving rerank execution to the calling agent.
 
 Acceptance:
 
