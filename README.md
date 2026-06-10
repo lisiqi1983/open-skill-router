@@ -72,6 +72,8 @@ skillrouter index-source ./skillrouter.source.yaml --out ./public/index
 skillrouter source add ./public/index public --mirror https://mirror.example.com/index/
 skillrouter source health public
 skillrouter recommend "帮我生成一份产品发布 PPT" --source public
+open-skill-router-api serve --source ./public/index --port 8765
+skillrouter recommend "帮我生成一份产品发布 PPT" --api http://127.0.0.1:8765
 skillrouter inspect github:owner/repo/skills/example@main
 skillrouter install github:owner/repo/skills/example@main --agent generic --scope user
 skillrouter list
@@ -83,15 +85,16 @@ skillrouter serve-mcp
 
 ## Development Status
 
-M0.5 through M4.5 paths are implemented for local and GitHub skill sources. The
+M0.5 through M5 paths are implemented for local and GitHub skill sources. The
 current runtime can parse `SKILL.md`, build a local index, generate candidate
 packs with model-rerank contracts, merge caller-provided model rerank JSON with
 deterministic scores, preserve safety gates, publish static JSONL snapshots with
 checksums, read named local or remote snapshot sources with mirror failover,
-cache remote static snapshots locally, diagnose source health, inspect skill
-sources, install skills into a local cache and generic agent target, write
-lockfiles, infer permissions, score risk, check updates, apply safe updates, and
-expose the same flow to local agents through MCP tools.
+cache remote static snapshots locally, diagnose source health, serve optional
+HTTP recommendations and feedback, inspect skill sources, install skills into a
+local cache and generic agent target, write lockfiles, infer permissions, score
+risk, check updates, apply safe updates, and expose the same flow to local agents
+through MCP tools.
 
 Try it locally:
 
@@ -106,6 +109,8 @@ node apps/cli/dist/index.js index-source skillrouter.source.yaml --out public/op
 node apps/cli/dist/index.js source add public/open-skill-router/index public --mirror https://mirror.example.com/open-skill-router/index/
 node apps/cli/dist/index.js source health public
 node apps/cli/dist/index.js recommend "帮我生成一份产品发布 PPT" --source public
+node apps/api/dist/index.js serve --source public/open-skill-router/index --port 8765
+node apps/cli/dist/index.js recommend "帮我生成一份产品发布 PPT" --api http://127.0.0.1:8765
 node apps/cli/dist/index.js init --agent generic --scope user
 node apps/cli/dist/index.js inspect local:skills/open-skill-router
 node apps/cli/dist/index.js install local:skills/open-skill-router --agent generic --scope user
@@ -133,6 +138,7 @@ pnpm test
 pnpm test:smoke
 pnpm test:mcp
 pnpm test:static
+pnpm test:api
 pnpm build
 ```
 
@@ -143,5 +149,6 @@ See:
 - [Security and Privacy](docs/security-privacy.md)
 - [Local Entry Skill](docs/local-entry-skill.md)
 - [MCP Tools](docs/mcp-tools.md)
+- [HTTP API](docs/api.md)
 - [Model-Assisted Recommendation](docs/model-assisted-recommendation.md)
 - [GitHub Deployment and Mirrors](docs/github-deployment-and-mirrors.md)

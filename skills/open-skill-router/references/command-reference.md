@@ -28,6 +28,15 @@ skillrouter source health public
 skillrouter recommend "帮我生成一份产品发布 PPT" --source public
 ```
 
+Use the optional API for team-shared recommendation:
+
+```bash
+open-skill-router-api serve --source ./public/index --port 8765
+skillrouter recommend "帮我生成一份产品发布 PPT" --api http://127.0.0.1:8765
+```
+
+Do not use `--api` for `strict_local` tasks.
+
 Inspect a skill:
 
 ```bash

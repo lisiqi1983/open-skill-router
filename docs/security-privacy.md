@@ -16,6 +16,8 @@ instructions, scripts, references, and assets that influence agent behavior.
 - Task text, file types, target agent, and low-sensitivity routing metadata may
   be sent to a configured recommendation endpoint.
 - User files, local source code, API keys, and full project contents are not sent.
+- The optional HTTP API falls into this category and should only be used for
+  team-approved tasks.
 
 ### Cloud
 
@@ -92,6 +94,13 @@ Blocked from automatic update:
 
 MVP installs and loads skills but does not execute third-party skill scripts.
 Script execution can be designed later behind explicit sandbox permissions.
+
+## API Feedback Privacy
+
+The optional HTTP API stores feedback as JSONL without raw task text. Feedback
+records include skill IDs, recommendation IDs, ratings, accepted/completed flags,
+optional comments, and anonymous tags. Sensitive task content should stay in the
+local CLI/MCP runtime.
 
 ## Implemented Safety Checks
 

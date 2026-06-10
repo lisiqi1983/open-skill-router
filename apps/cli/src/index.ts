@@ -138,6 +138,7 @@ program
     "Source registry path.",
     defaultSourceRegistryPath(),
   )
+  .option("--api <url>", "Optional Open Skill Router API base URL.")
   .option("-m, --max <count>", "Maximum recommendations.", parseInteger, 5)
   .option(
     "--mode <mode>",
@@ -161,6 +162,7 @@ program
         index: string;
         source?: string;
         sourceRegistry: string;
+        api?: string;
         max: number;
         mode: RecommendationMode;
         json?: boolean;
@@ -168,11 +170,6 @@ program
         modelRerank?: string;
       },
     ) => {
-      const index = await readRecommendationIndex({
-        indexPath: options.index,
-        source: options.source,
-        sourceRegistry: options.sourceRegistry,
-      });
       const modelRerank = options.modelRerank
         ? await readJsonFile<ModelRerankOutput>(options.modelRerank)
         : undefined;
@@ -181,13 +178,26 @@ program
           ? "full_skill_rerank"
           : options.mode
         : options.mode;
-      const result = recommendSkills({
-        index,
-        task,
-        maxResults: options.max,
-        mode,
-        modelRerank,
-      });
+      const result = options.api
+        ? await recommendWithApi(options.api, {
+            task,
+            source: options.source,
+            max_results: options.max,
+            recommendation_mode: mode,
+            include_candidate_pack: options.candidatePack,
+            model_rerank: modelRerank,
+          })
+        : recommendSkills({
+            index: await readRecommendationIndex({
+              indexPath: options.index,
+              source: options.source,
+              sourceRegistry: options.sourceRegistry,
+            }),
+            task,
+            maxResults: options.max,
+            mode,
+            modelRerank,
+          });
 
       if (options.json) {
         console.log(JSON.stringify(result, null, 2));
@@ -757,6 +767,43 @@ async function readRecommendationIndex(options: {
       ? [registeredSource.url, ...(registeredSource.mirrors ?? [])]
       : options.source,
   );
+}
+
+async function recommendWithApi(
+  apiUrl: string,
+  body: {
+    task: string;
+    source?: string;
+    max_results: number;
+    recommendation_mode: RecommendationMode;
+    include_candidate_pack?: boolean;
+    model_rerank?: ModelRerankOutput;
+  },
+): Promise<ReturnType<typeof recommendSkills>> {
+  if (body.recommendation_mode === "strict_local") {
+    throw new Error("strict_local recommendations must not use --api.");
+  }
+  const endpoint = new URL("/v1/recommend", ensureTrailingSlash(apiUrl));
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const result = (await response.json()) as ReturnType<
+    typeof recommendSkills
+  > & {
+    error?: { message?: string };
+  };
+  if (!response.ok) {
+    throw new Error(
+      result.error?.message ?? `API request failed: ${response.status}`,
+    );
+  }
+  return result;
+}
+
+function ensureTrailingSlash(value: string): string {
+  return value.endsWith("/") ? value : `${value}/`;
 }
 
 function parseRecommendationMode(value: string): RecommendationMode {

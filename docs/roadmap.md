@@ -208,13 +208,21 @@ Goal: add an optional API for teams that want shared indexing and feedback.
 
 Deliverables:
 
-- HTTP API.
-- PostgreSQL schema.
-- Optional vector search.
-- Feedback endpoint.
-- Privacy-preserving task metadata model.
+- [x] HTTP API.
+- [x] `GET /health`.
+- [x] `POST /v1/recommend`.
+- [x] `GET /v1/sources/health`.
+- [x] `POST /v1/feedback`.
+- [x] CLI `recommend --api`.
+- [x] PostgreSQL schema draft.
+- [x] Optional vector-search extension point in schema.
+- [x] Privacy-preserving feedback model.
 
 Acceptance:
 
 The CLI can call an API endpoint for recommendations while still supporting
 strict local mode.
+
+Status: implemented as an optional self-hosted API in `apps/api`. The default
+runtime remains local-first; `strict_local` recommendations are rejected on the
+API path.
