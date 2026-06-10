@@ -31,9 +31,7 @@ Examples:
 - Decision logs before they are cleaned up for public docs.
 - Release checklists.
 - Scratch architecture notes.
-- Local-only Skill source research, including private machine paths, personal
-  skill inventories, local catalog analysis outputs, and unpublished curation
-  decisions.
+- Local-only development plans about Skill source research.
 
 When a local note becomes stable and useful to contributors, promote it into
 `docs/` and commit the cleaned version.
@@ -43,8 +41,10 @@ When a local note becomes stable and useful to contributors, promote it into
 Skill source research has an extra privacy boundary:
 
 - Local or personal Skill repositories stay local. Their paths, generated
-  indexes, catalog analysis reports, and notes belong under `_local-dev/` or
-  another ignored local directory.
+  indexes, catalog analysis reports, and notes belong under the user's
+  SkillRouter home, preferably `~/.skillrouter/research/local-skill-research/`.
+  `_local-dev/` is only for development notes about this repository, not for the
+  long-term local Skill research inventory.
 - Public Skill sources can be published only after their repository URL, license
   or redistribution posture, source locator, risk profile, and curation notes
   have been reviewed.
@@ -54,3 +54,6 @@ Skill source research has an extra privacy boundary:
 - If local research produces generally useful taxonomy rules, scoring insights,
   or source-evaluation criteria, publish the cleaned rule or criterion rather
   than the private inventory itself.
+
+See [User Data Directories](user-data-directories.md) for the default directory
+layout.

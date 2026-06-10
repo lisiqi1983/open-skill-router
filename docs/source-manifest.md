@@ -105,8 +105,9 @@ Use two tracks when researching real Skill sources:
 
 - Local track: personal or machine-local Skill repositories are indexed and
   analyzed locally only. Keep their manifests, catalog analysis outputs, and
-  notes out of the public repository unless the user explicitly promotes a
-  cleaned version.
+  notes under the user's SkillRouter home, preferably
+  `~/.skillrouter/research/local-skill-research/`, unless the user explicitly
+  promotes a cleaned version.
 - Public track: publish only sources that are already public and reviewable.
   Before adding a public Skill to a committed manifest, record its source
   locator, stable ref or version strategy, curation tags, risk posture, and any

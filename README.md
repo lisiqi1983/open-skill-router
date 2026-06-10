@@ -171,6 +171,7 @@ See:
 - [Architecture](docs/architecture.md)
 - [Roadmap](docs/roadmap.md)
 - [Security and Privacy](docs/security-privacy.md)
+- [User Data Directories](docs/user-data-directories.md)
 - [Local Entry Skill](docs/local-entry-skill.md)
 - [MCP Tools](docs/mcp-tools.md)
 - [HTTP API](docs/api.md)
