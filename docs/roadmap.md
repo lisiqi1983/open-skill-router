@@ -226,3 +226,34 @@ strict local mode.
 Status: implemented as an optional self-hosted API in `apps/api`. The default
 runtime remains local-first; `strict_local` recommendations are rejected on the
 API path.
+
+## M6: Release Packaging and Mirror Pipeline
+
+Goal: make GitHub the primary distribution point while producing portable
+release artifacts that mirrors can copy and verify.
+
+Deliverables:
+
+- [x] `ci.yml` for format, typecheck, unit tests, and smoke tests.
+- [x] Release bundle builder.
+- [x] Static index release archive.
+- [x] `release-manifest.json`.
+- [x] `checksums.sha256` for release artifact verification.
+- [x] `release.yml` for tag/manual GitHub Releases.
+- [x] Release bundle smoke test.
+- [x] Mirror contract documentation.
+
+Acceptance:
+
+```bash
+pnpm test:release
+node apps/cli/dist/index.js source health dist/release/public/open-skill-router/index --json
+```
+
+The release bundle contains the same static index shape used by GitHub Pages,
+plus a compressed archive, release manifest, and checksums that mirrors can
+verify after sync.
+
+Status: implemented. GitHub Pages remains the canonical static source, while
+GitHub Release assets provide a second distribution channel for CDN and manual
+mirrors.

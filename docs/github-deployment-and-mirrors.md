@@ -82,8 +82,8 @@ The CLI should support multiple index sources and fail over in order:
 
 Initial workflows:
 
-- `ci.yml`: install, lint, typecheck, test.
-- `release.yml`: build packages and create GitHub release artifacts.
+- `ci.yml`: install, format-check, typecheck, unit tests, smoke tests, and release bundle smoke.
+- `release.yml`: build and verify release artifacts, then upload them to GitHub Releases.
 - `publish-index.yml`: build static index snapshots and publish to Pages.
 
 Static index files:
@@ -96,6 +96,22 @@ public/open-skill-router/index/skills.jsonl.sha256
 
 The M4 workflow `.github/workflows/publish-index.yml` builds this directory from
 the root `skillrouter.source.yaml` and deploys it to GitHub Pages.
+
+M6 adds a release bundle under `dist/release/`:
+
+```text
+dist/release/open-skill-router-static-index.tar.gz
+dist/release/release-manifest.json
+dist/release/checksums.sha256
+dist/release/public/open-skill-router/index/index.json
+dist/release/public/open-skill-router/index/skills.jsonl
+dist/release/public/open-skill-router/index/skills.jsonl.sha256
+```
+
+The tag/manual `release.yml` workflow uploads the archive, manifest, checksums,
+and raw static index files to GitHub Releases. Mirror operators can copy either
+the raw files or unpack the archive, then verify hashes against
+`checksums.sha256`.
 
 Canonical source URL shape:
 
@@ -137,3 +153,27 @@ the cached snapshot for the same URL.
 manifest checksum, and reports whether mirror hashes match the primary. A mirror
 with a different `skillsSha256` should be treated as stale or divergent until it
 is refreshed.
+
+## M6 Release and Mirror Validation
+
+Build and validate the release bundle locally:
+
+```bash
+pnpm test:release
+```
+
+The release bundle smoke verifies:
+
+- `release-manifest.json` schema and static index metadata.
+- `checksums.sha256` for every release file except itself.
+- `open-skill-router-static-index.tar.gz` contains the static index files.
+- `skillrouter source health` can read the generated index directory.
+
+Recommended mirror sync flow:
+
+1. Use GitHub Pages as the canonical source URL.
+2. Use GitHub Release assets as a durable snapshot channel.
+3. Copy `public/open-skill-router/index/` to CDN or regional static hosts.
+4. Compare mirror files with `checksums.sha256`.
+5. Register mirrors with `skillrouter source add --mirror`.
+6. Run `skillrouter source health public` before advertising the mirror.
