@@ -14,6 +14,8 @@ export interface TaskProfile {
   domain?: string;
   fileTypes: string[];
   outputRequirements: string[];
+  environments: string[];
+  workflowStages: string[];
   constraints: string[];
   privacyMode: "strict" | "balanced" | "cloud";
   allowNetwork?: boolean;
@@ -245,6 +247,11 @@ export interface SkillRecommendation {
     capabilityCoverage: number;
     inputOutputFit: number;
     safetyFit: number;
+    catalogIntentFit?: number;
+    domainFit?: number;
+    environmentFit?: number;
+    workflowFit?: number;
+    qualityFit?: number;
     userModelRerank?: number;
   };
 }

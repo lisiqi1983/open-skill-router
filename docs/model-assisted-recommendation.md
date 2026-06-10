@@ -9,7 +9,7 @@ bring the right candidate skills into the agent's context.
 ```text
 user task
   -> task profile
-  -> metadata retrieval
+  -> catalog-aware metadata retrieval
   -> top candidate selection
   -> fetch bounded candidate packs
   -> user-model rerank
@@ -118,14 +118,14 @@ Initial weighting:
 
 ```text
 final_score =
-  0.25 * metadata_match
-+ 0.20 * capability_coverage
-+ 0.15 * input_output_fit
-+ 0.15 * safety_fit
+  0.75 * deterministic_catalog_score
 + 0.25 * user_model_rerank
 ```
 
-The exact weights can be tuned with tests and feedback.
+The deterministic catalog score already includes metadata match, capability
+coverage, catalog intent fit, domain fit, input/output fit, environment fit,
+workflow-stage fit, quality prior, and safety fit. The exact weights can be
+tuned with tests and feedback.
 
 The current implementation stores the original deterministic score as
 `deterministicScore`, the caller model score as `modelRerankScore`, and writes

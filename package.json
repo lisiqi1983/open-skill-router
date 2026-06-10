@@ -18,6 +18,7 @@
     "release:bundle": "pnpm build && node scripts/build-release-bundle.mjs",
     "test:release": "pnpm release:bundle && node scripts/smoke-m6-release-bundle.mjs",
     "test:catalog": "pnpm build && node scripts/smoke-m7-catalog.mjs",
+    "test:multidim": "pnpm build && node scripts/smoke-m8-multidim-recommend.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

@@ -44,6 +44,33 @@ describe("recommendSkills", () => {
     );
   });
 
+  it("uses catalog dimensions for code review tasks", async () => {
+    const index = await discoverLocalSkills("../../examples/mock-skills", {
+      now: new Date("2026-06-09T00:00:00.000Z"),
+    });
+    const result = recommendSkills({
+      index,
+      task: "请审查 GitHub PR 中的 TypeScript 代码变更，找 bug 和缺测试，输出 markdown",
+      maxResults: 3,
+    });
+
+    expect(result.task.environments).toContain("github");
+    expect(result.task.workflowStages).toContain("verify");
+    expect(result.recommendations[0]?.skill.name).toBe("code-review");
+    expect(result.recommendations[0]?.scoreBreakdown).toEqual(
+      expect.objectContaining({
+        catalogIntentFit: expect.any(Number),
+        domainFit: expect.any(Number),
+        environmentFit: expect.any(Number),
+        workflowFit: expect.any(Number),
+      }),
+    );
+    expect(result.recommendations[0]!.scoreBreakdown.catalogIntentFit).toBe(
+      100,
+    );
+    expect(result.recommendations[0]!.scoreBreakdown.domainFit).toBe(100);
+  });
+
   it("applies model rerank scores while preserving deterministic safety gates", async () => {
     const index = await discoverLocalSkills("../../examples/mock-skills", {
       now: new Date("2026-06-09T00:00:00.000Z"),

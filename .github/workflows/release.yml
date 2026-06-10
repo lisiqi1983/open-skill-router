@@ -59,6 +59,7 @@ jobs:
           pnpm test:static
           pnpm test:api
           pnpm test:catalog
+          pnpm test:multidim
 
       - name: Build release bundle
         run: pnpm release:bundle

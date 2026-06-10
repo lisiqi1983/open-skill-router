@@ -87,7 +87,7 @@ skillrouter serve-mcp
 
 ## Development Status
 
-M0.5 through M7 paths are implemented for local and GitHub skill sources. The
+M0.5 through M8 paths are implemented for local and GitHub skill sources. The
 current runtime can parse `SKILL.md`, build a local index, generate candidate
 packs with model-rerank contracts, merge caller-provided model rerank JSON with
 deterministic scores, preserve safety gates, publish static JSONL snapshots with
@@ -98,7 +98,9 @@ local cache and generic agent target, write lockfiles, infer permissions, score
 risk, check updates, apply safe updates, expose the same flow to local agents
 through MCP tools, build verified release bundles for GitHub Releases and static
 mirrors, and generate a unified multidimensional catalog for local or remote
-skills.
+skills. Recommendation now uses catalog-aware multidimensional scoring across
+metadata, intent, domain, input/output, environment, workflow stage, quality, and
+safety signals.
 
 Try it locally:
 
@@ -107,6 +109,7 @@ pnpm install
 pnpm build
 node apps/cli/dist/index.js index examples/mock-skills
 node apps/cli/dist/index.js recommend "帮我生成一份产品发布 PPT"
+node apps/cli/dist/index.js recommend "请审查 GitHub PR 中的 TypeScript 代码变更，找 bug 和缺测试，输出 markdown" --json
 node apps/cli/dist/index.js recommend "分析专利交底书，评估授权概率，输出 PDF 报告" --candidate-pack --json
 node apps/cli/dist/index.js recommend "帮我生成一份产品发布 PPT" --model-rerank rerank.json --json
 node apps/cli/dist/index.js catalog build --index .skillrouter/index.json --out .skillrouter/catalog.json
@@ -148,6 +151,7 @@ pnpm test:static
 pnpm test:api
 pnpm test:release
 pnpm test:catalog
+pnpm test:multidim
 pnpm build
 ```
 

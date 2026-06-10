@@ -33,7 +33,9 @@ When a candidate pack is available, compare candidates using:
 
 - task fit
 - capability coverage
+- catalog intent and domain fit
 - input and output format fit
+- environment and workflow-stage fit
 - compatibility with the current agent host
 - source trust and version pinning
 - risk and permissions

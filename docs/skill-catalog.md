@@ -69,6 +69,21 @@ The catalog enables a staged recommendation strategy:
 5. Deterministic safety gate: keep install and update decisions outside the
    model.
 
+M8 implements the first weighted scoring pass. `recommendSkills` now combines:
+
+- Metadata keyword match.
+- Capability coverage.
+- Catalog intent fit.
+- Catalog domain fit.
+- Input/output fit.
+- Environment fit.
+- Workflow-stage fit.
+- Quality prior.
+- Deterministic safety fit.
+
+The result is still deterministic and local-first. Model rerank remains optional
+and merges with the deterministic score after the candidate set is selected.
+
 This can later evolve into a tensor-style approximation where interactions such
 as `domain x output`, `input x workflow`, and `risk x environment` are scored
 explicitly.

@@ -342,14 +342,7 @@ function mergeScore(
   recommendation: SkillRecommendation,
   userModelRerank: number,
 ): number {
-  const breakdown = recommendation.scoreBreakdown;
-  return clampScore(
-    0.25 * breakdown.metadataMatch +
-      0.2 * breakdown.capabilityCoverage +
-      0.15 * breakdown.inputOutputFit +
-      0.15 * breakdown.safetyFit +
-      0.25 * userModelRerank,
-  );
+  return clampScore(0.75 * recommendation.score + 0.25 * userModelRerank);
 }
 
 function mergeRecommendedAction(

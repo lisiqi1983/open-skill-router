@@ -288,3 +288,36 @@ dimension schema.
 Status: implemented as a read-only catalog layer. Recommendation still uses the
 existing deterministic scorer, with catalog dimensions ready for the next scoring
 upgrade.
+
+## M8: Catalog-Aware Multidimensional Recommendation
+
+Goal: make deterministic recommendation use the unified catalog dimensions for
+better local and remote Skill selection.
+
+Deliverables:
+
+- [x] Task profile environment inference.
+- [x] Task profile workflow-stage inference.
+- [x] Catalog intent fit score.
+- [x] Catalog domain fit score.
+- [x] Environment fit score.
+- [x] Workflow-stage fit score.
+- [x] Quality prior score.
+- [x] Recommendation explanations that mention catalog dimension fit.
+- [x] Model rerank merge based on the deterministic catalog score.
+- [x] M8 smoke test covering local and remote static-source recommendations.
+
+Acceptance:
+
+```bash
+skillrouter recommend "请审查 GitHub PR 中的 TypeScript 代码变更，找 bug 和缺测试，输出 markdown" --json
+pnpm test:multidim
+```
+
+The top recommendation is selected through deterministic multidimensional
+signals, and `scoreBreakdown` includes catalog intent, domain, environment, and
+workflow fit fields.
+
+Status: implemented. The next improvement is to add learned or feedback-tuned
+weights and explicit tensor-style interaction terms such as `domain x output`
+and `input x workflow`.

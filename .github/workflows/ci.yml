@@ -62,3 +62,6 @@ jobs:
 
       - name: Catalog smoke
         run: pnpm test:catalog
+
+      - name: Multidimensional recommendation smoke
+        run: pnpm test:multidim
