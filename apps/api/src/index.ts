@@ -1,5 +1,7 @@
 #!/usr/bin/env node
+import { readFile } from "node:fs/promises";
 import { Command } from "commander";
+import type { RecommendationScoringConfig } from "@openskillrouter/core";
 import { createSkillRouterApiServer } from "./server.js";
 
 export { createSkillRouterApiServer } from "./server.js";
@@ -25,6 +27,7 @@ program
   .option("--index <path>", "Fallback local index path.")
   .option("--source-registry <path>", "Source registry path.")
   .option("--feedback-dir <path>", "Feedback JSONL directory.")
+  .option("--scoring <path>", "Default scoring config JSON path.")
   .option(
     "--allow-direct-sources",
     "Allow request bodies to pass direct source URLs.",
@@ -37,13 +40,18 @@ program
       index?: string;
       sourceRegistry?: string;
       feedbackDir?: string;
+      scoring?: string;
       allowDirectSources?: boolean;
     }) => {
+      const defaultScoring = options.scoring
+        ? await readJsonFile<RecommendationScoringConfig>(options.scoring)
+        : undefined;
       const server = createSkillRouterApiServer({
         defaultSource: options.source,
         indexPath: options.index,
         sourceRegistry: options.sourceRegistry,
         feedbackDir: options.feedbackDir,
+        defaultScoring,
         allowDirectSources: options.allowDirectSources,
       });
 
@@ -63,6 +71,10 @@ if (isDirectRun()) {
     console.error(`open-skill-router-api: ${message}`);
     process.exitCode = 1;
   });
+}
+
+async function readJsonFile<T>(filePath: string): Promise<T> {
+  return JSON.parse(await readFile(filePath, "utf8")) as T;
 }
 
 function parsePort(value: string): number {

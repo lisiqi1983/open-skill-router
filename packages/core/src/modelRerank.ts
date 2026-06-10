@@ -1,4 +1,5 @@
 import type {
+  ModelRerankScoringWeights,
   ModelRerankApplication,
   ModelRerankOutput,
   ModelRerankValidation,
@@ -7,6 +8,7 @@ import type {
   ModelSkillRanking,
   SkillRecommendation,
 } from "./types.js";
+import { mergeModelRerankScore } from "./scoring.js";
 
 export const MODEL_RERANK_SCHEMA_VERSION = "skillrouter.model-rerank/v1";
 
@@ -96,6 +98,7 @@ export interface ApplyModelRerankOptions {
   recommendations: SkillRecommendation[];
   output: unknown;
   maxResults?: number;
+  modelRerankWeights?: ModelRerankScoringWeights;
 }
 
 const recommendationActions: SkillRecommendation["recommendedAction"][] = [
@@ -151,7 +154,11 @@ export function applyModelRerank(options: ApplyModelRerankOptions): {
         };
       }
 
-      return mergeRecommendationWithModelRanking(recommendation, ranking);
+      return mergeRecommendationWithModelRanking(
+        recommendation,
+        ranking,
+        options.modelRerankWeights,
+      );
     })
     .sort((left, right) => {
       if (right.score !== left.score) return right.score - left.score;
@@ -297,10 +304,15 @@ export function validateModelRerankOutput(
 function mergeRecommendationWithModelRanking(
   recommendation: SkillRecommendation,
   ranking: ModelSkillRanking,
+  weights?: ModelRerankScoringWeights,
 ): SkillRecommendation {
   const deterministicScore =
     recommendation.deterministicScore ?? recommendation.score;
-  const finalScore = mergeScore(recommendation, ranking.score);
+  const finalScore = mergeModelRerankScore(
+    recommendation.score,
+    ranking.score,
+    weights,
+  );
   const modelReasons = ranking.reasons ?? [];
   const reasons = uniqueStrings([
     ...modelReasons.map((reason) => `Model fit: ${reason}`),
@@ -336,13 +348,6 @@ function mergeRecommendationWithModelRanking(
       userModelRerank: ranking.score,
     },
   };
-}
-
-function mergeScore(
-  recommendation: SkillRecommendation,
-  userModelRerank: number,
-): number {
-  return clampScore(0.75 * recommendation.score + 0.25 * userModelRerank);
 }
 
 function mergeRecommendedAction(
@@ -470,8 +475,4 @@ function confidenceForScore(score: number): SkillRecommendation["confidence"] {
   if (score >= 75) return "high";
   if (score >= 45) return "medium";
   return "low";
-}
-
-function clampScore(value: number): number {
-  return Math.max(0, Math.min(100, Math.round(value)));
 }

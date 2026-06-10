@@ -17,6 +17,7 @@ import {
   type LocalSkillIndex,
   type ModelRerankOutput,
   type RecommendationMode,
+  type RecommendationScoringConfig,
   type RecommendSkillsResult,
   type TaskProfile,
 } from "@openskillrouter/core";
@@ -26,6 +27,7 @@ export interface SkillRouterApiOptions {
   defaultSource?: string;
   sourceRegistry?: string;
   feedbackDir?: string;
+  defaultScoring?: RecommendationScoringConfig;
   allowDirectSources?: boolean;
   fetchImpl?: typeof fetch;
   now?: () => Date;
@@ -39,6 +41,7 @@ export interface RecommendApiRequest {
   privacy_mode?: TaskProfile["privacyMode"];
   include_candidate_pack?: boolean;
   model_rerank?: ModelRerankOutput;
+  scoring?: RecommendationScoringConfig;
 }
 
 export interface FeedbackApiRequest {
@@ -152,6 +155,7 @@ async function recommendViaApi(
     mode,
     privacyMode: input.privacy_mode,
     modelRerank: input.model_rerank,
+    scoring: input.scoring ?? options.defaultScoring,
   });
 }
 

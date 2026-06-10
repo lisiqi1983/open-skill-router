@@ -54,6 +54,13 @@ Input:
   "recommendation_mode": "fast_metadata",
   "max_results": 5,
   "include_candidate_pack": true,
+  "scoring": {
+    "schemaVersion": "skillrouter.scoring/v1",
+    "weights": {
+      "catalogIntentFit": 2,
+      "environmentFit": 1
+    }
+  },
   "model_rerank": {
     "schemaVersion": "skillrouter.model-rerank/v1",
     "rankings": [
@@ -85,6 +92,8 @@ Notes:
 - `model_rerank` lets the caller pass structured model output back to
   SkillRouter. SkillRouter validates it, merges scores, and preserves
   deterministic safety gates.
+- `scoring` optionally tunes deterministic recommendation weights using
+  `skillrouter.scoring/v1`.
 - Supported modes are `fast_metadata`, `full_skill_rerank`, and `strict_local`.
 
 Output includes recommendations, scores, explanations, privacy mode, and

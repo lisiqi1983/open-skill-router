@@ -21,6 +21,7 @@ import {
   recommendSkills,
   type ModelRerankOutput,
   type RecommendationMode,
+  type RecommendationScoringConfig,
 } from "@openskillrouter/core";
 
 export interface RecommendSkillsToolInput {
@@ -34,6 +35,7 @@ export interface RecommendSkillsToolInput {
   max_results?: number;
   include_candidate_pack?: boolean;
   model_rerank?: ModelRerankOutput;
+  scoring?: RecommendationScoringConfig;
 }
 
 export interface InspectSkillToolInput {
@@ -94,6 +96,7 @@ export async function recommendSkillsTool(
     mode,
     privacyMode: input.privacy_mode,
     modelRerank: input.model_rerank,
+    scoring: input.scoring,
   }) as unknown as Record<string, unknown>;
 }
 

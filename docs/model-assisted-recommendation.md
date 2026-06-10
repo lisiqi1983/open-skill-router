@@ -125,7 +125,8 @@ final_score =
 The deterministic catalog score already includes metadata match, capability
 coverage, catalog intent fit, domain fit, input/output fit, environment fit,
 workflow-stage fit, quality prior, and safety fit. The exact weights can be
-tuned with tests and feedback.
+tuned with `skillrouter.scoring/v1` config files, tests, and later feedback
+aggregation.
 
 The current implementation stores the original deterministic score as
 `deterministicScore`, the caller model score as `modelRerankScore`, and writes

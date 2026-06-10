@@ -43,6 +43,32 @@ const modelRerankSchema = z.object({
     })
     .optional(),
 });
+const scoringWeightsSchema = z
+  .object({
+    metadataMatch: z.number().min(0).optional(),
+    capabilityCoverage: z.number().min(0).optional(),
+    catalogIntentFit: z.number().min(0).optional(),
+    domainFit: z.number().min(0).optional(),
+    inputOutputFit: z.number().min(0).optional(),
+    environmentFit: z.number().min(0).optional(),
+    workflowFit: z.number().min(0).optional(),
+    qualityFit: z.number().min(0).optional(),
+    safetyFit: z.number().min(0).optional(),
+  })
+  .strict();
+const modelRerankWeightsSchema = z
+  .object({
+    deterministicScore: z.number().min(0).optional(),
+    userModelRerank: z.number().min(0).optional(),
+  })
+  .strict();
+const scoringSchema = z
+  .object({
+    schemaVersion: z.literal("skillrouter.scoring/v1").optional(),
+    weights: scoringWeightsSchema.optional(),
+    modelRerankWeights: modelRerankWeightsSchema.optional(),
+  })
+  .strict();
 
 export function createSkillRouterMcpServer(): McpServer {
   const server = new McpServer(
@@ -76,6 +102,7 @@ export function createSkillRouterMcpServer(): McpServer {
         max_results: z.number().int().positive().max(50).optional(),
         include_candidate_pack: z.boolean().optional(),
         model_rerank: modelRerankSchema.optional(),
+        scoring: scoringSchema.optional(),
       },
       annotations: {
         readOnlyHint: true,

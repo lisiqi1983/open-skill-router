@@ -3,6 +3,7 @@ export * from "./discoverLocalSkills.js";
 export * from "./localIndex.js";
 export * from "./modelRerank.js";
 export * from "./recommend.js";
+export * from "./scoring.js";
 export * from "./skillCatalog.js";
 export * from "./sourceManifest.js";
 export * from "./sourceRegistry.js";

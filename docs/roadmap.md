@@ -321,3 +321,33 @@ workflow fit fields.
 Status: implemented. The next improvement is to add learned or feedback-tuned
 weights and explicit tensor-style interaction terms such as `domain x output`
 and `input x workflow`.
+
+## M9: Configurable Recommendation Scoring
+
+Goal: make multidimensional recommendation weights configurable without changing
+the deterministic safety boundary.
+
+Deliverables:
+
+- [x] `skillrouter.scoring/v1` config schema.
+- [x] Default normalized scoring weights.
+- [x] Custom deterministic scoring weights.
+- [x] Custom model-rerank merge weights.
+- [x] CLI `recommend --scoring`.
+- [x] API request `scoring` and API server default `--scoring`.
+- [x] MCP `recommend_skills.scoring`.
+- [x] Unit tests for scoring normalization and validation.
+- [x] M9 smoke test for local CLI and API scoring config.
+
+Acceptance:
+
+```bash
+skillrouter recommend "review TypeScript code" --scoring scoring.json --json
+pnpm test:scoring
+```
+
+The same scoring config can tune local CLI, API-backed CLI, and MCP
+recommendations. Weights are validated and normalized by the core runtime.
+
+Status: implemented. This is the configuration layer needed before automatic
+feedback-tuned scoring.

@@ -1,6 +1,10 @@
 import type { SkillReference } from "@openskillrouter/skill-spec";
 import { buildCandidatePack } from "./candidatePack.js";
 import { applyModelRerank } from "./modelRerank.js";
+import {
+  resolveRecommendationScoringConfig,
+  scoreRecommendationBreakdown,
+} from "./scoring.js";
 import { buildSkillCatalog } from "./skillCatalog.js";
 import { profileTask } from "./taskProfile.js";
 import { tokenizeText } from "./tokenize.js";
@@ -17,6 +21,7 @@ export function recommendSkills(
   options: RecommendSkillsOptions,
 ): RecommendSkillsResult {
   const task = profileTask(options.task, { privacyMode: options.privacyMode });
+  const scoring = resolveRecommendationScoringConfig(options.scoring);
   const catalogBySkillId = new Map(
     buildSkillCatalog(options.index).cards.map((card) => [card.skillId, card]),
   );
@@ -26,6 +31,7 @@ export function recommendSkills(
         indexedSkill,
         task,
         catalogBySkillId.get(indexedSkill.skill.id),
+        scoring.weights,
       ),
     )
     .filter((recommendation) => recommendation.score > 0)
@@ -42,6 +48,7 @@ export function recommendSkills(
         recommendations: scored,
         output: options.modelRerank,
         maxResults: options.maxResults,
+        modelRerankWeights: scoring.modelRerankWeights,
       })
     : undefined;
   const recommendations = modelRerankResult?.recommendations ?? scored;
@@ -66,6 +73,7 @@ function scoreSkill(
   indexedSkill: IndexedSkill,
   task: TaskProfile,
   catalogCard?: SkillCatalogCard,
+  weights = resolveRecommendationScoringConfig().weights,
 ): SkillRecommendation {
   const searchableText = buildSearchableText(indexedSkill);
   const searchableTokens = new Set(tokenizeText(searchableText));
@@ -109,19 +117,20 @@ function scoreSkill(
     domainFit > 0 ||
     (hasInputOutputRequirement(task) && inputOutputFit > 0) ||
     (task.workflowStages.length > 0 && workflowFit > 0);
-  const score = Math.round(
-    hasRelevanceEvidence
-      ? 0.2 * metadataMatch +
-          0.15 * capabilityCoverage +
-          0.2 * catalogIntentFit +
-          0.15 * domainFit +
-          0.2 * inputOutputFit +
-          0.08 * environmentFit +
-          0.07 * workflowFit +
-          0.03 * qualityFit +
-          0.02 * safetyFit
-      : 0,
-  );
+  const scoreBreakdown = {
+    metadataMatch,
+    capabilityCoverage,
+    inputOutputFit,
+    safetyFit,
+    catalogIntentFit,
+    domainFit,
+    environmentFit,
+    workflowFit,
+    qualityFit,
+  };
+  const score = hasRelevanceEvidence
+    ? scoreRecommendationBreakdown(scoreBreakdown, weights)
+    : 0;
   const risks = risksForSkill(indexedSkill.skill);
   const reasons = reasonsForSkill(indexedSkill.skill, matchedKeywords, task, {
     catalogCard,
@@ -152,17 +161,7 @@ function scoreSkill(
       indexedSkill.skill.riskLevel === "high" ? "inspect_first" : "install",
     explanation: reasons[0] ?? "Matched by indexed skill metadata.",
     matchedKeywords,
-    scoreBreakdown: {
-      metadataMatch,
-      capabilityCoverage,
-      inputOutputFit,
-      safetyFit,
-      catalogIntentFit,
-      domainFit,
-      environmentFit,
-      workflowFit,
-      qualityFit,
-    },
+    scoreBreakdown,
   };
 }
 

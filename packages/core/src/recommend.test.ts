@@ -71,6 +71,36 @@ describe("recommendSkills", () => {
     expect(result.recommendations[0]!.scoreBreakdown.domainFit).toBe(100);
   });
 
+  it("applies custom scoring weights", async () => {
+    const index = await discoverLocalSkills("../../examples/mock-skills", {
+      now: new Date("2026-06-09T00:00:00.000Z"),
+    });
+    const result = recommendSkills({
+      index,
+      task: "review TypeScript code for bugs and missing tests",
+      maxResults: 3,
+      scoring: {
+        schemaVersion: "skillrouter.scoring/v1",
+        weights: {
+          metadataMatch: 1,
+          capabilityCoverage: 0,
+          catalogIntentFit: 0,
+          domainFit: 0,
+          inputOutputFit: 0,
+          environmentFit: 0,
+          workflowFit: 0,
+          qualityFit: 0,
+          safetyFit: 0,
+        },
+      },
+    });
+
+    expect(result.recommendations[0]?.skill.name).toBe("code-review");
+    expect(result.recommendations[0]?.score).toBe(
+      result.recommendations[0]?.scoreBreakdown.metadataMatch,
+    );
+  });
+
   it("applies model rerank scores while preserving deterministic safety gates", async () => {
     const index = await discoverLocalSkills("../../examples/mock-skills", {
       now: new Date("2026-06-09T00:00:00.000Z"),

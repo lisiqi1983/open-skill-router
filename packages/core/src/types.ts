@@ -242,18 +242,48 @@ export interface SkillRecommendation {
     | "avoid";
   explanation: string;
   matchedKeywords: string[];
-  scoreBreakdown: {
-    metadataMatch: number;
-    capabilityCoverage: number;
-    inputOutputFit: number;
-    safetyFit: number;
-    catalogIntentFit?: number;
-    domainFit?: number;
-    environmentFit?: number;
-    workflowFit?: number;
-    qualityFit?: number;
-    userModelRerank?: number;
-  };
+  scoreBreakdown: RecommendationScoreBreakdown;
+}
+
+export interface RecommendationScoreBreakdown {
+  metadataMatch: number;
+  capabilityCoverage: number;
+  inputOutputFit: number;
+  safetyFit: number;
+  catalogIntentFit?: number;
+  domainFit?: number;
+  environmentFit?: number;
+  workflowFit?: number;
+  qualityFit?: number;
+  userModelRerank?: number;
+}
+
+export interface RecommendationScoringWeights {
+  metadataMatch: number;
+  capabilityCoverage: number;
+  catalogIntentFit: number;
+  domainFit: number;
+  inputOutputFit: number;
+  environmentFit: number;
+  workflowFit: number;
+  qualityFit: number;
+  safetyFit: number;
+}
+
+export interface ModelRerankScoringWeights {
+  deterministicScore: number;
+  userModelRerank: number;
+}
+
+export interface RecommendationScoringConfig {
+  schemaVersion?: "skillrouter.scoring/v1";
+  weights?: Partial<RecommendationScoringWeights>;
+  modelRerankWeights?: Partial<ModelRerankScoringWeights>;
+}
+
+export interface ResolvedRecommendationScoringConfig {
+  weights: RecommendationScoringWeights;
+  modelRerankWeights: ModelRerankScoringWeights;
 }
 
 export interface ModelSkillRanking {
@@ -302,6 +332,7 @@ export interface RecommendSkillsOptions {
   mode?: RecommendationMode;
   privacyMode?: TaskProfile["privacyMode"];
   modelRerank?: ModelRerankOutput;
+  scoring?: RecommendationScoringConfig;
 }
 
 export interface RecommendSkillsResult {

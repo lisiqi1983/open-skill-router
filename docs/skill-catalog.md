@@ -83,6 +83,8 @@ M8 implements the first weighted scoring pass. `recommendSkills` now combines:
 
 The result is still deterministic and local-first. Model rerank remains optional
 and merges with the deterministic score after the candidate set is selected.
+M9 makes these deterministic weights configurable through
+`skillrouter.scoring/v1`.
 
 This can later evolve into a tensor-style approximation where interactions such
 as `domain x output`, `input x workflow`, and `risk x environment` are scored

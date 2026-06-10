@@ -43,11 +43,20 @@ Input:
   "source": "public",
   "max_results": 5,
   "recommendation_mode": "fast_metadata",
-  "include_candidate_pack": false
+  "include_candidate_pack": false,
+  "scoring": {
+    "schemaVersion": "skillrouter.scoring/v1",
+    "weights": {
+      "domainFit": 2,
+      "inputOutputFit": 1
+    }
+  }
 }
 ```
 
 Returns the same recommendation result shape as the local core runtime.
+The optional `scoring` object uses the same schema as
+[Recommendation Scoring](scoring.md).
 
 ### `GET /v1/sources/health?source=public`
 

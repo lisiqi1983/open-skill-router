@@ -32,6 +32,7 @@ import {
   type SkillCatalog,
   type ModelRerankOutput,
   type RecommendationMode,
+  type RecommendationScoringConfig,
 } from "@openskillrouter/core";
 import { buildStaticIndexFromManifest } from "@openskillrouter/indexer";
 
@@ -158,6 +159,10 @@ program
     "--model-rerank <path>",
     "Apply a model rerank JSON file produced from a candidate pack.",
   )
+  .option(
+    "--scoring <path>",
+    "Apply a recommendation scoring config JSON file.",
+  )
   .action(
     async (
       task: string,
@@ -171,10 +176,14 @@ program
         json?: boolean;
         candidatePack?: boolean;
         modelRerank?: string;
+        scoring?: string;
       },
     ) => {
       const modelRerank = options.modelRerank
         ? await readJsonFile<ModelRerankOutput>(options.modelRerank)
+        : undefined;
+      const scoring = options.scoring
+        ? await readJsonFile<RecommendationScoringConfig>(options.scoring)
         : undefined;
       const mode = options.candidatePack
         ? options.mode === "fast_metadata"
@@ -189,6 +198,7 @@ program
             recommendation_mode: mode,
             include_candidate_pack: options.candidatePack,
             model_rerank: modelRerank,
+            scoring,
           })
         : recommendSkills({
             index: await readRecommendationIndex({
@@ -200,6 +210,7 @@ program
             maxResults: options.max,
             mode,
             modelRerank,
+            scoring,
           });
 
       if (options.json) {
@@ -834,6 +845,7 @@ async function recommendWithApi(
     recommendation_mode: RecommendationMode;
     include_candidate_pack?: boolean;
     model_rerank?: ModelRerankOutput;
+    scoring?: RecommendationScoringConfig;
   },
 ): Promise<ReturnType<typeof recommendSkills>> {
   if (body.recommendation_mode === "strict_local") {

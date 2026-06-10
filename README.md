@@ -68,6 +68,7 @@ skillrouter index ./examples/mock-skills
 skillrouter recommend "帮我生成一份产品发布 PPT"
 skillrouter recommend "帮我生成一份产品发布 PPT" --candidate-pack --json
 skillrouter recommend "帮我生成一份产品发布 PPT" --model-rerank rerank.json
+skillrouter recommend "请审查 GitHub PR 中的 TypeScript 代码变更" --scoring scoring.json
 skillrouter catalog build --index .skillrouter/index.json --out .skillrouter/catalog.json
 skillrouter index-source ./skillrouter.source.yaml --out ./public/index
 skillrouter source add ./public/index public --mirror https://mirror.example.com/index/
@@ -87,7 +88,7 @@ skillrouter serve-mcp
 
 ## Development Status
 
-M0.5 through M8 paths are implemented for local and GitHub skill sources. The
+M0.5 through M9 paths are implemented for local and GitHub skill sources. The
 current runtime can parse `SKILL.md`, build a local index, generate candidate
 packs with model-rerank contracts, merge caller-provided model rerank JSON with
 deterministic scores, preserve safety gates, publish static JSONL snapshots with
@@ -100,7 +101,8 @@ through MCP tools, build verified release bundles for GitHub Releases and static
 mirrors, and generate a unified multidimensional catalog for local or remote
 skills. Recommendation now uses catalog-aware multidimensional scoring across
 metadata, intent, domain, input/output, environment, workflow stage, quality, and
-safety signals.
+safety signals, and these scoring weights can be configured per CLI/API/MCP
+request.
 
 Try it locally:
 
@@ -110,6 +112,7 @@ pnpm build
 node apps/cli/dist/index.js index examples/mock-skills
 node apps/cli/dist/index.js recommend "帮我生成一份产品发布 PPT"
 node apps/cli/dist/index.js recommend "请审查 GitHub PR 中的 TypeScript 代码变更，找 bug 和缺测试，输出 markdown" --json
+node apps/cli/dist/index.js recommend "请审查 GitHub PR 中的 TypeScript 代码变更" --scoring scoring.json --json
 node apps/cli/dist/index.js recommend "分析专利交底书，评估授权概率，输出 PDF 报告" --candidate-pack --json
 node apps/cli/dist/index.js recommend "帮我生成一份产品发布 PPT" --model-rerank rerank.json --json
 node apps/cli/dist/index.js catalog build --index .skillrouter/index.json --out .skillrouter/catalog.json
@@ -152,6 +155,7 @@ pnpm test:api
 pnpm test:release
 pnpm test:catalog
 pnpm test:multidim
+pnpm test:scoring
 pnpm build
 ```
 
@@ -165,5 +169,6 @@ See:
 - [HTTP API](docs/api.md)
 - [Release Packaging](docs/release.md)
 - [Unified Skill Catalog](docs/skill-catalog.md)
+- [Recommendation Scoring](docs/scoring.md)
 - [Model-Assisted Recommendation](docs/model-assisted-recommendation.md)
 - [GitHub Deployment and Mirrors](docs/github-deployment-and-mirrors.md)

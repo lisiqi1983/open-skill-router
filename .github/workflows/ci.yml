@@ -65,3 +65,6 @@ jobs:
 
       - name: Multidimensional recommendation smoke
         run: pnpm test:multidim
+
+      - name: Scoring config smoke
+        run: pnpm test:scoring
