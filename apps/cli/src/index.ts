@@ -108,26 +108,47 @@ program
     "Local directory containing one or more SKILL.md files.",
   )
   .option("-o, --out <path>", "Output index path.", defaultProjectIndexPath())
+  .option(
+    "--skip-invalid",
+    "Research mode: skip malformed SKILL.md files and record them in invalidSkills.",
+  )
   .option("--json", "Print machine-readable JSON.")
-  .action(async (source: string, options: { out: string; json?: boolean }) => {
-    const index = await discoverLocalSkills(source);
-    await writeLocalSkillIndex(index, options.out);
+  .action(
+    async (
+      source: string,
+      options: { out: string; skipInvalid?: boolean; json?: boolean },
+    ) => {
+      const index = await discoverLocalSkills(source, {
+        skipInvalid: options.skipInvalid,
+      });
+      await writeLocalSkillIndex(index, options.out);
 
-    if (options.json) {
-      console.log(
-        JSON.stringify(
-          { outputPath: options.out, skillCount: index.skills.length, index },
-          null,
-          2,
-        ),
-      );
-      return;
-    }
+      if (options.json) {
+        console.log(
+          JSON.stringify(
+            {
+              outputPath: options.out,
+              skillCount: index.skills.length,
+              invalidSkillCount: index.invalidSkills?.length ?? 0,
+              index,
+            },
+            null,
+            2,
+          ),
+        );
+        return;
+      }
 
-    console.log(`Indexed ${index.skills.length} skill(s).`);
-    console.log(`Source: ${index.sourceRoot}`);
-    console.log(`Index: ${options.out}`);
-  });
+      console.log(`Indexed ${index.skills.length} skill(s).`);
+      if ((index.invalidSkills?.length ?? 0) > 0) {
+        console.log(
+          `Skipped ${index.invalidSkills?.length ?? 0} invalid skill(s).`,
+        );
+      }
+      console.log(`Source: ${index.sourceRoot}`);
+      console.log(`Index: ${options.out}`);
+    },
+  );
 
 program
   .command("recommend")
@@ -358,17 +379,23 @@ program
   .description("Build a static JSONL index from skillrouter.source.yaml.")
   .argument("<manifest>", "Path to skillrouter.source.yaml.")
   .requiredOption("-o, --out <dir>", "Output directory for static files.")
+  .option(
+    "--skip-invalid",
+    "Research mode: skip malformed local SKILL.md files in manifest sources.",
+  )
   .option("--json", "Print machine-readable JSON.")
   .action(
     async (
       manifest: string,
       options: {
         out: string;
+        skipInvalid?: boolean;
         json?: boolean;
       },
     ) => {
       const result = await buildStaticIndexFromManifest(manifest, {
         outDir: options.out,
+        skipInvalid: options.skipInvalid,
       });
 
       if (options.json) {

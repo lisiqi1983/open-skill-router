@@ -35,6 +35,13 @@ export interface LocalSkillIndex {
   generatedAt: string;
   sourceRoot: string;
   skills: IndexedSkill[];
+  invalidSkills?: InvalidIndexedSkill[];
+}
+
+export interface InvalidIndexedSkill {
+  skillFilePath: string;
+  rootPath: string;
+  error: string;
 }
 
 export interface SkillCatalog {

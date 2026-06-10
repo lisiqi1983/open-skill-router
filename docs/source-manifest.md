@@ -3,6 +3,9 @@
 `skillrouter.source.yaml` lets maintainers publish a curated list of skill
 sources without hosting skill packages.
 
+`skillrouter.public-seed.yaml` follows the same schema and is used for the
+community-maintained public Skill research seed.
+
 ## File Name
 
 ```text
@@ -43,6 +46,7 @@ skills:
 
 ```bash
 skillrouter index-source ./skillrouter.source.yaml --out ./public/index
+skillrouter index-source ./skillrouter.public-seed.yaml --out ./public/open-skill-router/public-seed/index
 skillrouter source add ./public/index public --mirror https://mirror.example.com/index/
 skillrouter source list
 skillrouter source health public
@@ -90,6 +94,11 @@ M4 supports:
 GitHub repository-wide include globs are parsed but not expanded yet. For now,
 list GitHub skills explicitly under `skills`.
 
+`--skip-invalid` can be used during research to continue indexing valid local
+Skills while reporting malformed `SKILL.md` files. Do not rely on it to hide
+invalid entries in a public manifest; public entries should be fixed or removed
+before publishing.
+
 ## Design Notes
 
 - Manifests point to source repositories.
@@ -98,6 +107,9 @@ list GitHub skills explicitly under `skills`.
 - They should be hashable and cacheable.
 - Static snapshots can be published through GitHub Pages, Releases, or any
   mirror that serves plain files.
+
+See [Public Skill Seed](public-skill-seed.md) for the shared public curation
+manifest and contribution checklist.
 
 ## Public Curation Policy
 

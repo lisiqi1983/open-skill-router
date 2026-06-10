@@ -1,0 +1,104 @@
+schema_version: "skillrouter.source/v1"
+name: "open-skill-router-public-seed"
+description: "Curated public Agent Skills seed set for Open Skill Router research and recommendation."
+maintainer: "Open Skill Router maintainers"
+updated_at: "2026-06-10"
+
+skills:
+  - id: "public.openai.github"
+    source:
+      type: github
+      repo: "openai/plugins"
+      path: "plugins/github/skills/github"
+      ref: "c6ea566d43f71cb85ae39a6f7c0c50e287794652"
+    tags: ["public", "github", "developer-tools", "openai-curated"]
+    notes: "OpenAI curated GitHub router skill. Repository MIT per plugin metadata."
+  - id: "public.openai.github.gh-address-comments"
+    source:
+      type: github
+      repo: "openai/plugins"
+      path: "plugins/github/skills/gh-address-comments"
+      ref: "c6ea566d43f71cb85ae39a6f7c0c50e287794652"
+    tags: ["public", "github", "pull-request", "code-review", "openai-curated"]
+    notes: "Addresses actionable GitHub PR review feedback. Repository MIT per plugin metadata."
+  - id: "public.openai.github.yeet"
+    source:
+      type: github
+      repo: "openai/plugins"
+      path: "plugins/github/skills/yeet"
+      ref: "c6ea566d43f71cb85ae39a6f7c0c50e287794652"
+    tags: ["public", "github", "pull-request", "publishing", "openai-curated"]
+    notes: "Publishes local changes to GitHub through an intentional branch/PR workflow. Repository MIT per plugin metadata."
+
+  - id: "public.nvidia.aiq-deploy"
+    source:
+      type: github
+      repo: "NVIDIA/skills"
+      path: "plugins/nvidia-skills/skills/aiq-deploy"
+      ref: "24806dbdb4f45b9d8c476c0e7a9b223b8c9e7197"
+    tags: ["public", "nvidia", "deployment", "aiq"]
+    notes: "NVIDIA curated AI-Q deployment skill. Plugin metadata lists Apache-2.0 AND CC-BY-4.0."
+  - id: "public.nvidia.cuopt-user-rules"
+    source:
+      type: github
+      repo: "NVIDIA/skills"
+      path: "plugins/nvidia-skills/skills/cuopt-user-rules"
+      ref: "24806dbdb4f45b9d8c476c0e7a9b223b8c9e7197"
+    tags: ["public", "nvidia", "optimization", "routing", "cuopt"]
+    notes: "NVIDIA cuOpt user routing and optimization skill. Plugin metadata lists Apache-2.0 AND CC-BY-4.0."
+  - id: "public.nvidia.dynamo-interconnect-check"
+    source:
+      type: github
+      repo: "NVIDIA/skills"
+      path: "plugins/nvidia-skills/skills/dynamo-interconnect-check"
+      ref: "24806dbdb4f45b9d8c476c0e7a9b223b8c9e7197"
+    tags: ["public", "nvidia", "dynamo", "inference", "validation"]
+    notes: "Checks Dynamo deployment interconnect readiness. Plugin metadata lists Apache-2.0 AND CC-BY-4.0."
+  - id: "public.nvidia.dynamo-router-starter"
+    source:
+      type: github
+      repo: "NVIDIA/skills"
+      path: "plugins/nvidia-skills/skills/dynamo-router-starter"
+      ref: "24806dbdb4f45b9d8c476c0e7a9b223b8c9e7197"
+    tags: ["public", "nvidia", "dynamo", "router", "inference"]
+    notes: "Starts or patches Dynamo router modes. Plugin metadata lists Apache-2.0 AND CC-BY-4.0."
+  - id: "public.nvidia.nemoclaw-user-get-started"
+    source:
+      type: github
+      repo: "NVIDIA/skills"
+      path: "plugins/nvidia-skills/skills/nemoclaw-user-get-started"
+      ref: "24806dbdb4f45b9d8c476c0e7a9b223b8c9e7197"
+    tags: ["public", "nvidia", "nemoclaw", "onboarding"]
+    notes: "NemoClaw onboarding and quickstart skill. Plugin metadata lists Apache-2.0 AND CC-BY-4.0."
+  - id: "public.nvidia.omniverse-realtime-viewer"
+    source:
+      type: github
+      repo: "NVIDIA/skills"
+      path: "plugins/nvidia-skills/skills/omniverse-realtime-viewer"
+      ref: "24806dbdb4f45b9d8c476c0e7a9b223b8c9e7197"
+    tags: ["public", "nvidia", "omniverse", "usd", "viewer"]
+    notes: "Router for Omniverse Realtime Viewer USD app requests. Plugin metadata lists Apache-2.0 AND CC-BY-4.0."
+  - id: "public.nvidia.physical-ai-infrastructure"
+    source:
+      type: github
+      repo: "NVIDIA/skills"
+      path: "plugins/nvidia-skills/skills/physical-ai-infrastructure-setup-and-resilient-scaling"
+      ref: "24806dbdb4f45b9d8c476c0e7a9b223b8c9e7197"
+    tags: ["public", "nvidia", "physical-ai", "infrastructure", "kubernetes"]
+    notes: "Physical AI infrastructure setup and resilient scaling. Plugin metadata lists Apache-2.0 AND CC-BY-4.0."
+  - id: "public.heygen.video"
+    source:
+      type: github
+      repo: "heygen-com/skills"
+      path: "heygen-video"
+      ref: "396fa481ee17ef5bdfc0c4122f468c4e3080fbe0"
+    tags: ["public", "heygen", "video", "avatar"]
+    notes: "HeyGen video generation skill. Repository MIT per plugin metadata."
+  - id: "public.heygen.translate"
+    source:
+      type: github
+      repo: "heygen-com/skills"
+      path: "heygen-translate"
+      ref: "396fa481ee17ef5bdfc0c4122f468c4e3080fbe0"
+    tags: ["public", "heygen", "video", "translation"]
+    notes: "HeyGen translation skill discovered from the public repository. Repository MIT per plugin metadata."

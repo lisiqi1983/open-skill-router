@@ -77,6 +77,8 @@ skillrouter source health public
 skillrouter recommend "帮我生成一份产品发布 PPT" --source public
 skillrouter catalog build --source public --json
 skillrouter catalog analyze --source public --json
+skillrouter source add https://lisiqi1983.github.io/open-skill-router/open-skill-router/public-seed/index/ public-seed
+skillrouter catalog analyze --source public-seed --json
 open-skill-router-api serve --source ./public/index --port 8765
 skillrouter recommend "帮我生成一份产品发布 PPT" --api http://127.0.0.1:8765
 skillrouter inspect github:owner/repo/skills/example@main
@@ -90,7 +92,7 @@ skillrouter serve-mcp
 
 ## Development Status
 
-M0.5 through M10 paths are implemented for local and GitHub skill sources. The
+M0.5 through M11 paths are implemented for local and GitHub skill sources. The
 current runtime can parse `SKILL.md`, build a local index, generate candidate
 packs with model-rerank contracts, merge caller-provided model rerank JSON with
 deterministic scores, preserve safety gates, publish static JSONL snapshots with
@@ -106,7 +108,8 @@ slices, and compact skill profiles for local or remote sources. Recommendation
 now uses catalog-aware multidimensional scoring across
 metadata, intent, domain, input/output, environment, workflow stage, quality, and
 safety signals, and these scoring weights can be configured per CLI/API/MCP
-request.
+request. Real Skill research now has a local-only curation track, a public seed
+manifest, and research-mode invalid Skill skipping for noisy local inventories.
 
 Try it locally:
 
@@ -127,6 +130,8 @@ node apps/cli/dist/index.js source health public
 node apps/cli/dist/index.js recommend "帮我生成一份产品发布 PPT" --source public
 node apps/cli/dist/index.js catalog build --source public --json
 node apps/cli/dist/index.js catalog analyze --source public --json
+node apps/cli/dist/index.js index-source skillrouter.public-seed.yaml --out public/open-skill-router/public-seed/index
+node apps/cli/dist/index.js index C:/Users/example/.codex/skills --out .skillrouter/local-index.json --skip-invalid
 node apps/api/dist/index.js serve --source public/open-skill-router/index --port 8765
 node apps/cli/dist/index.js recommend "帮我生成一份产品发布 PPT" --api http://127.0.0.1:8765
 pnpm test:release
@@ -181,3 +186,4 @@ See:
 - [Recommendation Scoring](docs/scoring.md)
 - [Model-Assisted Recommendation](docs/model-assisted-recommendation.md)
 - [GitHub Deployment and Mirrors](docs/github-deployment-and-mirrors.md)
+- [Public Skill Seed](docs/public-skill-seed.md)

@@ -39,3 +39,8 @@ through the local runtime.
 Before installing or updating a skill, inspect the source, risk level,
 permissions, resolved version, file list, and hash. Follow
 `references/install-safety.md`.
+
+For real Skill source research, first follow
+`references/source-curation-policy.md`. Keep local or personal Skill inventories
+under the user's SkillRouter home, and publish only cleaned public source
+manifests.

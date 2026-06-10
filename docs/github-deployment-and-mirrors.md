@@ -92,10 +92,14 @@ Static index files:
 public/open-skill-router/index/index.json
 public/open-skill-router/index/skills.jsonl
 public/open-skill-router/index/skills.jsonl.sha256
+public/open-skill-router/public-seed/index/index.json
+public/open-skill-router/public-seed/index/skills.jsonl
+public/open-skill-router/public-seed/index/skills.jsonl.sha256
 ```
 
 The M4 workflow `.github/workflows/publish-index.yml` builds this directory from
-the root `skillrouter.source.yaml` and deploys it to GitHub Pages.
+the root `skillrouter.source.yaml` and deploys it to GitHub Pages. The public
+Skill research seed is built from `skillrouter.public-seed.yaml`.
 
 M6 adds a release bundle under `dist/release/`:
 
@@ -117,12 +121,14 @@ Canonical source URL shape:
 
 ```text
 https://<owner>.github.io/<repo>/open-skill-router/index/
+https://<owner>.github.io/<repo>/open-skill-router/public-seed/index/
 ```
 
 CLI usage:
 
 ```bash
 skillrouter source add https://<owner>.github.io/<repo>/open-skill-router/index/ public
+skillrouter source add https://<owner>.github.io/<repo>/open-skill-router/public-seed/index/ public-seed
 skillrouter source add https://<owner>.github.io/<repo>/open-skill-router/index/ public --mirror https://mirror.example.com/open-skill-router/index/
 skillrouter source health public
 skillrouter recommend "帮我生成一份产品发布 PPT" --source public

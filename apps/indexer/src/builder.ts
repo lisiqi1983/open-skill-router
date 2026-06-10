@@ -17,6 +17,7 @@ export interface BuildStaticIndexOptions {
   outDir: string;
   now?: Date;
   fetchImpl?: typeof fetch;
+  skipInvalid?: boolean;
 }
 
 export interface BuildStaticIndexResult extends WriteStaticSkillIndexResult {
@@ -34,6 +35,7 @@ export async function buildStaticIndexFromManifest(
   const skills = await collectManifestSkills(manifest, manifestDir, {
     now: options.now,
     fetchImpl: options.fetchImpl,
+    skipInvalid: options.skipInvalid,
   });
   const index: LocalSkillIndex = {
     schemaVersion: "skillrouter.local-index/v1",
@@ -57,7 +59,7 @@ export async function buildStaticIndexFromManifest(
 async function collectManifestSkills(
   manifest: SourceManifest,
   manifestDir: string,
-  options: { now?: Date; fetchImpl?: typeof fetch },
+  options: { now?: Date; fetchImpl?: typeof fetch; skipInvalid?: boolean },
 ): Promise<IndexedSkill[]> {
   const groups = await Promise.all([
     ...((manifest.sources ?? []).map((source) =>
@@ -73,11 +75,14 @@ async function collectManifestSkills(
 async function collectManifestSource(
   source: SourceManifestSource,
   manifestDir: string,
-  options: { now?: Date },
+  options: { now?: Date; skipInvalid?: boolean },
 ): Promise<IndexedSkill[]> {
   if (source.type === "local") {
     const sourceRoot = resolveManifestPath(manifestDir, source.path);
-    const index = await discoverLocalSkills(sourceRoot, { now: options.now });
+    const index = await discoverLocalSkills(sourceRoot, {
+      now: options.now,
+      skipInvalid: options.skipInvalid,
+    });
     return index.skills.map((skill) =>
       applyCuration(skill, {
         tags: source.tags,

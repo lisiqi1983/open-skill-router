@@ -23,10 +23,27 @@ Build and use a static source:
 
 ```bash
 skillrouter index-source ./skillrouter.source.yaml --out ./public/index
+skillrouter index-source ./skillrouter.public-seed.yaml --out ./public/open-skill-router/public-seed/index
 skillrouter source add ./public/index public --mirror https://mirror.example.com/index/
 skillrouter source list
 skillrouter source health public
 skillrouter recommend "帮我生成一份产品发布 PPT" --source public
+```
+
+Use the public seed after GitHub Pages is enabled:
+
+```bash
+skillrouter source add https://lisiqi1983.github.io/open-skill-router/open-skill-router/public-seed/index/ public-seed
+skillrouter source health public-seed
+skillrouter catalog analyze --source public-seed --json
+skillrouter recommend "review a GitHub PR and address comments" --source public-seed
+```
+
+During local-only research, skip malformed local Skills without editing them:
+
+```bash
+skillrouter index ./some-skill-root --out ./tmp/index.json --skip-invalid
+skillrouter index-source ./local-source.yaml --out ./tmp/index --skip-invalid
 ```
 
 Use the optional API for team-shared recommendation:

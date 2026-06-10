@@ -7,7 +7,11 @@ import {
   type SkillReference,
 } from "@openskillrouter/skill-spec";
 import { scanSkillDirectory } from "@openskillrouter/security";
-import type { IndexedSkill, LocalSkillIndex } from "./types.js";
+import type {
+  IndexedSkill,
+  InvalidIndexedSkill,
+  LocalSkillIndex,
+} from "./types.js";
 
 const EXCLUDED_DIRS = new Set([
   ".git",
@@ -21,6 +25,7 @@ const EXCLUDED_DIRS = new Set([
 
 export interface DiscoverLocalSkillsOptions {
   now?: Date;
+  skipInvalid?: boolean;
 }
 
 export async function discoverLocalSkills(
@@ -30,10 +35,22 @@ export async function discoverLocalSkills(
   const rootPath = path.resolve(sourceRoot);
   const skillFiles = await findSkillFiles(rootPath);
   const indexedAt = (options.now ?? new Date()).toISOString();
-  const skills = await Promise.all(
+  const results = await Promise.all(
     skillFiles.map((skillFilePath) =>
-      readSkill(rootPath, skillFilePath, indexedAt),
+      readSkillResult(rootPath, skillFilePath, indexedAt),
     ),
+  );
+  const invalidSkills = results.flatMap((result) =>
+    result.invalid ? [result.invalid] : [],
+  );
+  if (invalidSkills.length > 0 && !options.skipInvalid) {
+    const first = invalidSkills[0];
+    throw new Error(
+      `Unable to index ${first.skillFilePath}: ${first.error}. Use --skip-invalid for research-only indexing.`,
+    );
+  }
+  const skills = results.flatMap((result) =>
+    result.skill ? [result.skill] : [],
   );
 
   return {
@@ -43,7 +60,28 @@ export async function discoverLocalSkills(
     skills: skills.sort((left, right) =>
       left.skill.id.localeCompare(right.skill.id),
     ),
+    ...(invalidSkills.length > 0 ? { invalidSkills } : {}),
   };
+}
+
+async function readSkillResult(
+  sourceRoot: string,
+  skillFilePath: string,
+  indexedAt: string,
+): Promise<{ skill?: IndexedSkill; invalid?: InvalidIndexedSkill }> {
+  try {
+    return {
+      skill: await readSkill(sourceRoot, skillFilePath, indexedAt),
+    };
+  } catch (error) {
+    return {
+      invalid: {
+        skillFilePath,
+        rootPath: path.dirname(skillFilePath),
+        error: error instanceof Error ? error.message : String(error),
+      },
+    };
+  }
 }
 
 async function findSkillFiles(rootPath: string): Promise<string[]> {
