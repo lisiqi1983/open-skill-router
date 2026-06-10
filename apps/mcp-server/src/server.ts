@@ -15,6 +15,34 @@ const recommendationModeSchema = z.enum([
   "full_skill_rerank",
   "strict_local",
 ]);
+const recommendedActionSchema = z.enum([
+  "use",
+  "install",
+  "update_then_use",
+  "inspect_first",
+  "avoid",
+]);
+const modelRerankSchema = z.object({
+  schemaVersion: z.literal("skillrouter.model-rerank/v1").optional(),
+  rankings: z.array(
+    z.object({
+      skill_id: z.string().min(1),
+      score: z.number().min(0).max(100),
+      reasons: z.array(z.string()).optional(),
+      covers: z.array(z.string()).optional(),
+      missing: z.array(z.string()).optional(),
+      risks: z.array(z.string()).optional(),
+      recommended_action: recommendedActionSchema.optional(),
+    }),
+  ),
+  combination: z
+    .object({
+      needed: z.boolean(),
+      skills: z.array(z.string()),
+      reason: z.string().optional(),
+    })
+    .optional(),
+});
 
 export function createSkillRouterMcpServer(): McpServer {
   const server = new McpServer(
@@ -45,6 +73,7 @@ export function createSkillRouterMcpServer(): McpServer {
         recommendation_mode: recommendationModeSchema.optional(),
         max_results: z.number().int().positive().max(50).optional(),
         include_candidate_pack: z.boolean().optional(),
+        model_rerank: modelRerankSchema.optional(),
       },
       annotations: {
         readOnlyHint: true,

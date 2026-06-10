@@ -1,5 +1,6 @@
 import type { SkillReference } from "@openskillrouter/skill-spec";
 import { buildCandidatePack } from "./candidatePack.js";
+import { applyModelRerank } from "./modelRerank.js";
 import { profileTask } from "./taskProfile.js";
 import { tokenizeText } from "./tokenize.js";
 import type {
@@ -25,19 +26,28 @@ export function recommendSkills(
     }));
 
   const mode = options.mode ?? "fast_metadata";
+  const modelRerankResult = options.modelRerank
+    ? applyModelRerank({
+        recommendations: scored,
+        output: options.modelRerank,
+        maxResults: options.maxResults,
+      })
+    : undefined;
+  const recommendations = modelRerankResult?.recommendations ?? scored;
 
   return {
     task,
-    recommendations: scored,
+    recommendations,
     candidatePack:
       mode === "full_skill_rerank" || mode === "strict_local"
         ? buildCandidatePack({
             mode,
             task,
-            recommendations: scored,
+            recommendations,
             indexedSkills: options.index.skills,
           })
         : undefined,
+    modelRerank: modelRerankResult?.modelRerank,
   };
 }
 

@@ -125,15 +125,21 @@ while deterministic code still owns safety and installation.
 
 Deliverables:
 
-- `RecommendationMode`: `fast_metadata`, `full_skill_rerank`, and `strict_local`.
-- `CandidatePack` schema with bounded `SKILL.md` excerpts, file tree, permissions, and risk summary.
-- JSON-schema rerank output contract.
-- Prompt injection guardrails for untrusted candidate skill documents.
-- Score merging between deterministic ranking and model rerank.
+- [x] `RecommendationMode`: `fast_metadata`, `full_skill_rerank`, and `strict_local`.
+- [x] `CandidatePack` schema with bounded `SKILL.md` excerpts, file tree, permissions, and risk summary.
+- [x] JSON-schema rerank output contract.
+- [x] Prompt injection guardrails for untrusted candidate skill documents.
+- [x] Score merging between deterministic ranking and model rerank.
+- [x] CLI `--model-rerank` input.
+- [x] MCP `model_rerank` input.
+- [x] Tests proving model rerank cannot downgrade deterministic safety actions.
 
 M3 already exposes candidate packs through `recommend_skills` when callers set
-`include_candidate_pack`. M3.5 will make the model-rerank loop first-class in
-the router runtime instead of leaving rerank execution to the calling agent.
+`include_candidate_pack`. M3.5 makes the model-rerank merge loop first-class in
+the router runtime while still leaving actual model execution to the calling
+agent.
+
+Status: implemented in `packages/core`, `apps/cli`, and `apps/mcp-server`.
 
 Acceptance:
 

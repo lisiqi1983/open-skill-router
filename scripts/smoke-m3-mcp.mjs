@@ -58,8 +58,35 @@ try {
       `MCP recommend_skills did not return presentation-deck:\n${text}`,
     );
   }
+
+  const reranked = await client.callTool({
+    name: "recommend_skills",
+    arguments: {
+      task: "帮我生成一份产品发布 PPT",
+      source_root: "examples/mock-skills",
+      max_results: 3,
+      model_rerank: {
+        schemaVersion: "skillrouter.model-rerank/v1",
+        rankings: [
+          {
+            skill_id: "local:presentation-deck",
+            score: 100,
+            reasons: ["Best match for a product launch deck."],
+            recommended_action: "install",
+          },
+        ],
+      },
+    },
+  });
+  const rerankedText =
+    reranked.content?.[0]?.type === "text" ? reranked.content[0].text : "";
+  if (!rerankedText.includes('"modelRerankScore": 100')) {
+    throw new Error(
+      `MCP recommend_skills did not apply model rerank:\n${rerankedText}`,
+    );
+  }
 } finally {
   await client.close();
 }
 
-console.log("Smoke M3 MCP passed.");
+console.log("Smoke M3/M3.5 MCP passed.");

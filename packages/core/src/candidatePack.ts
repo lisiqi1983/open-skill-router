@@ -1,4 +1,8 @@
 import type { SkillRecommendation } from "./types.js";
+import {
+  MODEL_RERANK_GUARDRAILS,
+  MODEL_RERANK_OUTPUT_SCHEMA,
+} from "./modelRerank.js";
 import type {
   CandidatePack,
   IndexedSkill,
@@ -33,6 +37,10 @@ export function buildCandidatePack(
     limits: {
       maxCandidates: options.recommendations.length,
       maxSkillBodyChars,
+    },
+    rerankContract: {
+      guardrails: [...MODEL_RERANK_GUARDRAILS],
+      outputSchema: MODEL_RERANK_OUTPUT_SCHEMA,
     },
     candidates: options.recommendations.map((recommendation) => {
       const indexedSkill = skillsById.get(recommendation.skill.id);

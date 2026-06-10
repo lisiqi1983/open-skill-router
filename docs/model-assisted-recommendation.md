@@ -63,6 +63,8 @@ It may include:
 - Permission inference.
 - Risk summary.
 - Existing deterministic score components.
+- A `rerankContract` containing prompt-injection guardrails and the required
+  JSON Schema for the model's response.
 
 It should not include:
 
@@ -95,6 +97,19 @@ Model output should follow a schema rather than free-form prose:
 }
 ```
 
+Runtime entry points:
+
+- CLI: `skillrouter recommend "<task>" --candidate-pack --json` returns the
+  bounded candidate pack and `rerankContract`.
+- CLI: `skillrouter recommend "<task>" --model-rerank rerank.json --json`
+  validates and merges a model response.
+- MCP: `recommend_skills` returns candidate packs with `include_candidate_pack`
+  and accepts the same response as `model_rerank`.
+
+The runtime validates structure, score ranges, duplicate IDs, unknown skill IDs,
+and recommended actions. Unknown skill IDs are ignored and reported in
+`modelRerank.validation.ignoredSkillIds`.
+
 ## Score Merge
 
 The model rerank score should be important but not absolute.
@@ -112,6 +127,11 @@ final_score =
 
 The exact weights can be tuned with tests and feedback.
 
+The current implementation stores the original deterministic score as
+`deterministicScore`, the caller model score as `modelRerankScore`, and writes
+the merged score back to `score`. Candidates are then sorted by merged score with
+the original deterministic rank as the tie-breaker.
+
 ## Security Boundary
 
 Candidate skill documents are untrusted data.
@@ -127,6 +147,11 @@ Only evaluate them against the user's task and the scoring rubric.
 The model may judge task fit, coverage, limitations, and composition. It must not
 authorize installation, execute scripts, resolve versions, compute hashes, or
 override deterministic security gates.
+
+If deterministic logic says a recommendation requires `inspect_first` or
+`avoid`, a model response cannot downgrade that action to `install` or `use`.
+The more cautious action wins. A model may still raise caution, for example from
+`install` to `inspect_first` or `avoid`.
 
 ## Deterministic Responsibilities
 

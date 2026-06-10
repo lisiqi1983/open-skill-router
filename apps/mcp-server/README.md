@@ -14,6 +14,11 @@ Implemented tools:
 The server calls the same core/cache/security modules used by the CLI. MCP is a
 transport layer, not a separate install path.
 
+`recommend_skills` supports the M3.5 model-assisted loop: callers can request a
+candidate pack, run their own model over the bounded candidates, then call
+`recommend_skills` again with `model_rerank` to get merged final
+recommendations.
+
 ## Local Run
 
 Build the workspace:

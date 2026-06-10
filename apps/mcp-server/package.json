@@ -20,7 +20,7 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "pnpm typecheck",
-    "test": "vitest run"
+    "test": "pnpm --filter @openskillrouter/skill-spec build && pnpm --filter @openskillrouter/security build && pnpm --filter @openskillrouter/adapters build && pnpm --filter @openskillrouter/cache build && pnpm --filter @openskillrouter/core build && vitest run"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",

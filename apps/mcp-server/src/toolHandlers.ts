@@ -16,6 +16,7 @@ import {
   discoverLocalSkills,
   readLocalSkillIndex,
   recommendSkills,
+  type ModelRerankOutput,
   type RecommendationMode,
 } from "@openskillrouter/core";
 
@@ -27,6 +28,7 @@ export interface RecommendSkillsToolInput {
   recommendation_mode?: RecommendationMode;
   max_results?: number;
   include_candidate_pack?: boolean;
+  model_rerank?: ModelRerankOutput;
 }
 
 export interface InspectSkillToolInput {
@@ -88,6 +90,7 @@ export async function recommendSkillsTool(
     maxResults: input.max_results,
     mode,
     privacyMode: input.privacy_mode,
+    modelRerank: input.model_rerank,
   }) as unknown as Record<string, unknown>;
 }
 

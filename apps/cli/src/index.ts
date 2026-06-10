@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { readFile } from "node:fs/promises";
 import { Command } from "commander";
 import {
   applySafeUpdates,
@@ -18,6 +19,7 @@ import {
   readLocalSkillIndex,
   recommendSkills,
   writeLocalSkillIndex,
+  type ModelRerankOutput,
   type RecommendationMode,
 } from "@openskillrouter/core";
 
@@ -128,6 +130,10 @@ program
     "--candidate-pack",
     "Include a candidate pack for model-assisted rerank.",
   )
+  .option(
+    "--model-rerank <path>",
+    "Apply a model rerank JSON file produced from a candidate pack.",
+  )
   .action(
     async (
       task: string,
@@ -137,9 +143,13 @@ program
         mode: RecommendationMode;
         json?: boolean;
         candidatePack?: boolean;
+        modelRerank?: string;
       },
     ) => {
       const index = await readLocalSkillIndex(options.index);
+      const modelRerank = options.modelRerank
+        ? await readJsonFile<ModelRerankOutput>(options.modelRerank)
+        : undefined;
       const mode = options.candidatePack
         ? options.mode === "fast_metadata"
           ? "full_skill_rerank"
@@ -150,6 +160,7 @@ program
         task,
         maxResults: options.max,
         mode,
+        modelRerank,
       });
 
       if (options.json) {
@@ -163,6 +174,18 @@ program
         console.log(
           `Candidate pack: ${result.candidatePack.candidates.length} candidate(s), mode ${result.candidatePack.mode}.`,
         );
+      }
+      if (result.modelRerank) {
+        console.log("");
+        console.log(
+          `Model rerank: ${result.modelRerank.applied ? "applied" : "not applied"}.`,
+        );
+        if (result.modelRerank.validation.issues.length > 0) {
+          console.log("Model rerank issues:");
+          for (const issue of result.modelRerank.validation.issues) {
+            console.log(`- ${issue.path}: ${issue.message}`);
+          }
+        }
       }
     },
   );
@@ -510,6 +533,11 @@ function parseInteger(value: string): number {
     throw new Error(`Expected a positive integer, received "${value}".`);
   }
   return parsed;
+}
+
+async function readJsonFile<T>(filePath: string): Promise<T> {
+  const raw = await readFile(filePath, "utf8");
+  return JSON.parse(raw) as T;
 }
 
 function parseRecommendationMode(value: string): RecommendationMode {

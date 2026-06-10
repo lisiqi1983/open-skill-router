@@ -66,6 +66,8 @@ docs/           Public architecture and operating documents.
 skillrouter init --agent generic --scope user
 skillrouter index ./examples/mock-skills
 skillrouter recommend "帮我生成一份产品发布 PPT"
+skillrouter recommend "帮我生成一份产品发布 PPT" --candidate-pack --json
+skillrouter recommend "帮我生成一份产品发布 PPT" --model-rerank rerank.json
 skillrouter inspect github:owner/repo/skills/example@main
 skillrouter install github:owner/repo/skills/example@main --agent generic --scope user
 skillrouter list
@@ -77,12 +79,13 @@ skillrouter serve-mcp
 
 ## Development Status
 
-M0.5, M1, M2, and M3 paths are implemented for local and GitHub skill sources.
-The current runtime can parse `SKILL.md`, build a local index, generate
-candidate packs, inspect skill sources, install skills into a local cache and
-generic agent target, write lockfiles, infer permissions, score risk, check
-updates, apply safe updates, and expose the same flow to local agents through
-MCP tools.
+M0.5, M1, M2, M3, and M3.5 paths are implemented for local and GitHub skill
+sources. The current runtime can parse `SKILL.md`, build a local index, generate
+candidate packs with model-rerank contracts, merge caller-provided model rerank
+JSON with deterministic scores, preserve safety gates, inspect skill sources,
+install skills into a local cache and generic agent target, write lockfiles,
+infer permissions, score risk, check updates, apply safe updates, and expose the
+same flow to local agents through MCP tools.
 
 Try it locally:
 
@@ -92,6 +95,7 @@ pnpm build
 node apps/cli/dist/index.js index examples/mock-skills
 node apps/cli/dist/index.js recommend "帮我生成一份产品发布 PPT"
 node apps/cli/dist/index.js recommend "分析专利交底书，评估授权概率，输出 PDF 报告" --candidate-pack --json
+node apps/cli/dist/index.js recommend "帮我生成一份产品发布 PPT" --model-rerank rerank.json --json
 node apps/cli/dist/index.js init --agent generic --scope user
 node apps/cli/dist/index.js inspect local:skills/open-skill-router
 node apps/cli/dist/index.js install local:skills/open-skill-router --agent generic --scope user
@@ -106,8 +110,10 @@ MCP clients can also start the built server directly:
 node apps/mcp-server/dist/index.js
 ```
 
-The M3 MCP tools are `recommend_skills`, `inspect_skill`, `install_skill`,
-`load_skill`, `update_skill`, and `record_feedback`.
+The M3/M3.5 MCP tools are `recommend_skills`, `inspect_skill`, `install_skill`,
+`load_skill`, `update_skill`, and `record_feedback`. `recommend_skills` can
+return a candidate pack for the caller's model or accept a `model_rerank` object
+and return merged final recommendations.
 
 Run checks:
 

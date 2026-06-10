@@ -33,14 +33,29 @@ describe("createSkillRouterMcpServer", () => {
           task: "帮我生成一份产品发布 PPT",
           source_root: "../../examples/mock-skills",
           include_candidate_pack: true,
+          model_rerank: {
+            schemaVersion: "skillrouter.model-rerank/v1",
+            rankings: [
+              {
+                skill_id: "local:presentation-deck",
+                score: 100,
+                reasons: ["Best match for PPT deck generation."],
+                recommended_action: "install",
+              },
+            ],
+          },
         },
       });
 
       expect(result.structuredContent).toEqual(
         expect.objectContaining({
+          modelRerank: expect.objectContaining({
+            applied: true,
+          }),
           recommendations: expect.arrayContaining([
             expect.objectContaining({
               skill: expect.objectContaining({ name: "presentation-deck" }),
+              modelRerankScore: 100,
             }),
           ]),
         }),

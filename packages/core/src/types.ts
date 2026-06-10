@@ -44,6 +44,10 @@ export interface CandidatePack {
     maxCandidates: number;
     maxSkillBodyChars: number;
   };
+  rerankContract: {
+    guardrails: string[];
+    outputSchema: Record<string, unknown>;
+  };
   candidates: CandidateSkillDocument[];
 }
 
@@ -62,6 +66,8 @@ export interface CandidateSkillDocument {
 export interface SkillRecommendation {
   skill: SkillReference;
   score: number;
+  deterministicScore?: number;
+  modelRerankScore?: number;
   confidence: "low" | "medium" | "high";
   rank: number;
   reasons: string[];
@@ -86,7 +92,47 @@ export interface SkillRecommendation {
     capabilityCoverage: number;
     inputOutputFit: number;
     safetyFit: number;
+    userModelRerank?: number;
   };
+}
+
+export interface ModelSkillRanking {
+  skill_id: string;
+  score: number;
+  reasons?: string[];
+  covers?: string[];
+  missing?: string[];
+  risks?: string[];
+  recommended_action?: SkillRecommendation["recommendedAction"];
+}
+
+export interface ModelSkillCombination {
+  needed: boolean;
+  skills: string[];
+  reason?: string;
+}
+
+export interface ModelRerankOutput {
+  schemaVersion?: "skillrouter.model-rerank/v1";
+  rankings: ModelSkillRanking[];
+  combination?: ModelSkillCombination;
+}
+
+export interface ModelRerankValidationIssue {
+  path: string;
+  message: string;
+}
+
+export interface ModelRerankValidation {
+  valid: boolean;
+  issues: ModelRerankValidationIssue[];
+  ignoredSkillIds: string[];
+}
+
+export interface ModelRerankApplication {
+  applied: boolean;
+  validation: ModelRerankValidation;
+  combination?: ModelSkillCombination;
 }
 
 export interface RecommendSkillsOptions {
@@ -95,10 +141,12 @@ export interface RecommendSkillsOptions {
   maxResults?: number;
   mode?: RecommendationMode;
   privacyMode?: TaskProfile["privacyMode"];
+  modelRerank?: ModelRerankOutput;
 }
 
 export interface RecommendSkillsResult {
   task: TaskProfile;
   recommendations: SkillRecommendation[];
   candidatePack?: CandidatePack;
+  modelRerank?: ModelRerankApplication;
 }

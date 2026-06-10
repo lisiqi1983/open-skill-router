@@ -52,7 +52,18 @@ Input:
   "privacy_mode": "balanced",
   "recommendation_mode": "fast_metadata",
   "max_results": 5,
-  "include_candidate_pack": true
+  "include_candidate_pack": true,
+  "model_rerank": {
+    "schemaVersion": "skillrouter.model-rerank/v1",
+    "rankings": [
+      {
+        "skill_id": "local:presentation-deck",
+        "score": 96,
+        "reasons": ["Best match for presentation generation."],
+        "recommended_action": "install"
+      }
+    ]
+  }
 }
 ```
 
@@ -63,10 +74,20 @@ Notes:
   index path is used.
 - `include_candidate_pack` defaults the mode to `full_skill_rerank` so the
   caller's model can compare bounded candidate documents.
+- `model_rerank` lets the caller pass structured model output back to
+  SkillRouter. SkillRouter validates it, merges scores, and preserves
+  deterministic safety gates.
 - Supported modes are `fast_metadata`, `full_skill_rerank`, and `strict_local`.
 
 Output includes recommendations, scores, explanations, privacy mode, and
-candidate packs when requested.
+candidate packs when requested. When `model_rerank` is supplied, output also
+includes `modelRerank.applied`, validation issues, ignored skill IDs, merged
+scores, and `modelRerankScore` on affected recommendations.
+
+The candidate pack contains a `rerankContract` with prompt-injection guardrails
+and a JSON Schema for the model's response. Candidate skill documents are
+untrusted data; model output can affect fit scoring but cannot authorize
+installation or downgrade `inspect_first`/`avoid` safety actions.
 
 ### `inspect_skill`
 
@@ -169,5 +190,5 @@ pnpm test:mcp
 ```
 
 The smoke test starts `apps/mcp-server/dist/index.js` as a real stdio MCP server,
-lists the six tools, and calls `recommend_skills` against
-`examples/mock-skills`.
+lists the six tools, calls `recommend_skills` against `examples/mock-skills`,
+and verifies that caller-provided `model_rerank` output is applied.
