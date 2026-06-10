@@ -18,6 +18,15 @@ Use `--candidate-pack --json` when the calling model should compare bounded
 candidate skill documents. After the model produces JSON matching the candidate
 pack's `rerankContract.outputSchema`, pass it back with `--model-rerank`.
 
+Build and use a static source:
+
+```bash
+skillrouter index-source ./skillrouter.source.yaml --out ./public/index
+skillrouter source add ./public/index public
+skillrouter source list
+skillrouter recommend "帮我生成一份产品发布 PPT" --source public
+```
+
 Inspect a skill:
 
 ```bash

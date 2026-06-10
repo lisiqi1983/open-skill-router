@@ -1,0 +1,35 @@
+{
+  "name": "@openskillrouter/indexer",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Static index builder for Open Skill Router.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "open-skill-router-indexer": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "pnpm typecheck",
+    "test": "pnpm --filter @openskillrouter/skill-spec build && pnpm --filter @openskillrouter/security build && pnpm --filter @openskillrouter/adapters build && pnpm --filter @openskillrouter/cache build && pnpm --filter @openskillrouter/core build && vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@openskillrouter/cache": "workspace:*",
+    "@openskillrouter/core": "workspace:*",
+    "commander": "^14.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.0"
+  }
+}

@@ -35,6 +35,84 @@ export interface LocalSkillIndex {
   skills: IndexedSkill[];
 }
 
+export interface SourceManifest {
+  schema_version: "skillrouter.source/v1";
+  name: string;
+  description?: string;
+  maintainer?: string;
+  updated_at?: string;
+  sources?: SourceManifestSource[];
+  skills?: SourceManifestSkill[];
+}
+
+export type SourceManifestSource =
+  | {
+      type: "local";
+      path: string;
+      include?: string[];
+      tags?: string[];
+      notes?: string;
+    }
+  | {
+      type: "github";
+      repo: string;
+      ref?: string;
+      include?: string[];
+      tags?: string[];
+      notes?: string;
+    };
+
+export interface SourceManifestSkill {
+  id?: string;
+  source:
+    | {
+        type: "local";
+        path: string;
+      }
+    | {
+        type: "github";
+        repo: string;
+        path: string;
+        ref?: string;
+      };
+  tags?: string[];
+  notes?: string;
+}
+
+export interface StaticSkillIndexManifest {
+  schemaVersion: "skillrouter.static-index/v1";
+  generatedAt: string;
+  name: string;
+  description?: string;
+  sourceManifest?: string;
+  skillCount: number;
+  skillsPath: string;
+  checksumPath: string;
+  skillsSha256: string;
+}
+
+export interface StaticSkillRecord {
+  schemaVersion: "skillrouter.skill-record/v1";
+  skill: IndexedSkill["skill"];
+  skillFilePath: string;
+  rootPath: string;
+  body: string;
+  indexedAt: string;
+}
+
+export interface SkillSourceRegistryEntry {
+  name: string;
+  url: string;
+  addedAt: string;
+  enabled: boolean;
+}
+
+export interface SkillSourceRegistry {
+  schemaVersion: "skillrouter.sources/v1";
+  updatedAt: string;
+  sources: SkillSourceRegistryEntry[];
+}
+
 export interface CandidatePack {
   schemaVersion: "skillrouter.candidate-pack/v1";
   generatedAt: string;

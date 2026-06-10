@@ -15,13 +15,20 @@ import {
 } from "@openskillrouter/cache";
 import {
   defaultProjectIndexPath,
+  defaultSourceRegistryPath,
+  addSourceRegistryEntry,
   discoverLocalSkills,
+  readStaticSkillIndex,
   readLocalSkillIndex,
+  readSourceRegistry,
   recommendSkills,
+  removeSourceRegistryEntry,
+  resolveSourceRegistryEntry,
   writeLocalSkillIndex,
   type ModelRerankOutput,
   type RecommendationMode,
 } from "@openskillrouter/core";
+import { buildStaticIndexFromManifest } from "@openskillrouter/indexer";
 
 const program = new Command();
 
@@ -115,9 +122,20 @@ program
 
 program
   .command("recommend")
-  .description("Recommend skills for a task from the local index.")
+  .description(
+    "Recommend skills for a task from a local index or static source.",
+  )
   .argument("<task>", "Natural language task.")
   .option("-i, --index <path>", "Local index path.", defaultProjectIndexPath())
+  .option(
+    "--source <name-or-url>",
+    "Static source name, directory, JSONL file, or URL.",
+  )
+  .option(
+    "--source-registry <path>",
+    "Source registry path.",
+    defaultSourceRegistryPath(),
+  )
   .option("-m, --max <count>", "Maximum recommendations.", parseInteger, 5)
   .option(
     "--mode <mode>",
@@ -139,6 +157,8 @@ program
       task: string,
       options: {
         index: string;
+        source?: string;
+        sourceRegistry: string;
         max: number;
         mode: RecommendationMode;
         json?: boolean;
@@ -146,7 +166,11 @@ program
         modelRerank?: string;
       },
     ) => {
-      const index = await readLocalSkillIndex(options.index);
+      const index = await readRecommendationIndex({
+        indexPath: options.index,
+        source: options.source,
+        sourceRegistry: options.sourceRegistry,
+      });
       const modelRerank = options.modelRerank
         ? await readJsonFile<ModelRerankOutput>(options.modelRerank)
         : undefined;
@@ -187,6 +211,129 @@ program
           }
         }
       }
+    },
+  );
+
+program
+  .command("index-source")
+  .description("Build a static JSONL index from skillrouter.source.yaml.")
+  .argument("<manifest>", "Path to skillrouter.source.yaml.")
+  .requiredOption("-o, --out <dir>", "Output directory for static files.")
+  .option("--json", "Print machine-readable JSON.")
+  .action(
+    async (
+      manifest: string,
+      options: {
+        out: string;
+        json?: boolean;
+      },
+    ) => {
+      const result = await buildStaticIndexFromManifest(manifest, {
+        outDir: options.out,
+      });
+
+      if (options.json) {
+        console.log(JSON.stringify(result, null, 2));
+        return;
+      }
+
+      console.log(`Built static index: ${result.manifest.name}`);
+      console.log(`Skills: ${result.manifest.skillCount}`);
+      console.log(`Manifest: ${result.manifestPath}`);
+      console.log(`JSONL: ${result.skillsPath}`);
+      console.log(`Checksum: ${result.checksumPath}`);
+    },
+  );
+
+const sourceCommand = program
+  .command("source")
+  .description("Manage static skill metadata sources.");
+
+sourceCommand
+  .command("add")
+  .description("Add or replace a named static source.")
+  .argument(
+    "<url>",
+    "Static index URL, directory, index.json, or skills.jsonl.",
+  )
+  .argument("[name]", "Source name.", "public")
+  .option(
+    "--registry <path>",
+    "Source registry path.",
+    defaultSourceRegistryPath(),
+  )
+  .option("--json", "Print machine-readable JSON.")
+  .action(
+    async (
+      url: string,
+      name: string,
+      options: { registry: string; json?: boolean },
+    ) => {
+      const registry = await addSourceRegistryEntry(
+        { name, url },
+        options.registry,
+      );
+
+      if (options.json) {
+        console.log(JSON.stringify(registry, null, 2));
+        return;
+      }
+
+      console.log(`Added source "${name}": ${url}`);
+      console.log(`Registry: ${options.registry}`);
+    },
+  );
+
+sourceCommand
+  .command("list")
+  .description("List configured static sources.")
+  .option(
+    "--registry <path>",
+    "Source registry path.",
+    defaultSourceRegistryPath(),
+  )
+  .option("--json", "Print machine-readable JSON.")
+  .action(async (options: { registry: string; json?: boolean }) => {
+    const registry = await readSourceRegistry(options.registry);
+
+    if (options.json) {
+      console.log(JSON.stringify(registry, null, 2));
+      return;
+    }
+
+    console.log(`Registry: ${options.registry}`);
+    if (registry.sources.length === 0) {
+      console.log("No static sources configured.");
+      return;
+    }
+    for (const source of registry.sources) {
+      console.log(`${source.name} ${source.enabled ? "enabled" : "disabled"}`);
+      console.log(`  URL: ${source.url}`);
+      console.log(`  Added: ${source.addedAt}`);
+    }
+  });
+
+sourceCommand
+  .command("remove")
+  .description("Remove a named static source.")
+  .argument("<name>", "Source name.")
+  .option(
+    "--registry <path>",
+    "Source registry path.",
+    defaultSourceRegistryPath(),
+  )
+  .option("--json", "Print machine-readable JSON.")
+  .action(
+    async (name: string, options: { registry: string; json?: boolean }) => {
+      const registry = await removeSourceRegistryEntry(name, options.registry);
+
+      if (options.json) {
+        console.log(JSON.stringify(registry, null, 2));
+        return;
+      }
+
+      console.log(`Removed source "${name}".`);
+      console.log(`Registry: ${options.registry}`);
     },
   );
 
@@ -538,6 +685,22 @@ function parseInteger(value: string): number {
 async function readJsonFile<T>(filePath: string): Promise<T> {
   const raw = await readFile(filePath, "utf8");
   return JSON.parse(raw) as T;
+}
+
+async function readRecommendationIndex(options: {
+  indexPath: string;
+  source?: string;
+  sourceRegistry: string;
+}) {
+  if (!options.source) {
+    return readLocalSkillIndex(options.indexPath);
+  }
+
+  const registeredSource = await resolveSourceRegistryEntry(
+    options.source,
+    options.sourceRegistry,
+  );
+  return readStaticSkillIndex(registeredSource?.url ?? options.source);
 }
 
 function parseRecommendationMode(value: string): RecommendationMode {

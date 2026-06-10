@@ -21,7 +21,8 @@
   },
   "dependencies": {
     "@openskillrouter/security": "workspace:*",
-    "@openskillrouter/skill-spec": "workspace:*"
+    "@openskillrouter/skill-spec": "workspace:*",
+    "yaml": "^2.9.0"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

@@ -13,6 +13,7 @@
     "typecheck": "pnpm -r --if-present typecheck",
     "test:smoke": "pnpm build && node scripts/smoke-m0-m2.mjs",
     "test:mcp": "pnpm build && node scripts/smoke-m3-mcp.mjs",
+    "test:static": "pnpm build && node scripts/smoke-m4-static-index.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

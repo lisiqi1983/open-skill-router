@@ -89,8 +89,27 @@ Initial workflows:
 Static index files:
 
 ```text
-dist/index/skills.jsonl
-dist/index/sources.json
-dist/index/checksums.txt
-dist/index/metadata.json
+public/open-skill-router/index/index.json
+public/open-skill-router/index/skills.jsonl
+public/open-skill-router/index/skills.jsonl.sha256
 ```
+
+The M4 workflow `.github/workflows/publish-index.yml` builds this directory from
+the root `skillrouter.source.yaml` and deploys it to GitHub Pages.
+
+Canonical source URL shape:
+
+```text
+https://<owner>.github.io/<repo>/open-skill-router/index/
+```
+
+CLI usage:
+
+```bash
+skillrouter source add https://<owner>.github.io/<repo>/open-skill-router/index/ public
+skillrouter recommend "帮我生成一份产品发布 PPT" --source public
+```
+
+Mirror hosts should serve the same three files with identical relative paths.
+`skills.jsonl.sha256` allows clients and users to compare mirrors against the
+canonical snapshot.

@@ -2,6 +2,10 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import {
+  discoverLocalSkills,
+  writeStaticSkillIndex,
+} from "@openskillrouter/core";
 import { describe, expect, it } from "vitest";
 import {
   inspectSkillTool,
@@ -69,6 +73,29 @@ describe("MCP tool handlers", () => {
         expect.objectContaining({
           skill: expect.objectContaining({ name: "presentation-deck" }),
           modelRerankScore: 100,
+        }),
+      ]),
+    );
+  });
+
+  it("recommends skills from a static source snapshot", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "skillrouter-mcp-static-"));
+    const out = path.join(root, "index");
+    const index = await discoverLocalSkills("../../examples/mock-skills");
+    await writeStaticSkillIndex(index, out, {
+      name: "mcp-static",
+    });
+
+    const result = await recommendSkillsTool({
+      task: "帮我生成一份产品发布 PPT",
+      static_source: out,
+      max_results: 3,
+    });
+
+    expect(result.recommendations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          skill: expect.objectContaining({ name: "presentation-deck" }),
         }),
       ]),
     );

@@ -42,9 +42,45 @@ skills:
 ## CLI Commands
 
 ```bash
-skillrouter index-source ./skillrouter.source.yaml
-skillrouter index-source github:lisiqi1983/skillrouter-sources@main
+skillrouter index-source ./skillrouter.source.yaml --out ./public/index
+skillrouter source add ./public/index public
+skillrouter source list
+skillrouter recommend "分析专利交底书" --source public
 ```
+
+The indexer app can also be called directly:
+
+```bash
+open-skill-router-indexer build ./skillrouter.source.yaml --out ./public/index
+```
+
+## Static Output
+
+`index-source` writes:
+
+```text
+index.json
+skills.jsonl
+skills.jsonl.sha256
+```
+
+`index.json` has schema `skillrouter.static-index/v1` and points to the JSONL
+and checksum files. `skills.jsonl` contains one
+`skillrouter.skill-record/v1` record per skill. The CLI verifies
+`skills.jsonl` against `skillsSha256` when reading a static index through
+`--source`.
+
+## Supported Inputs
+
+M4 supports:
+
+- `sources[].type: local` for discovering all `SKILL.md` files under a local
+  directory.
+- `skills[].source.type: local` for explicitly listing one local skill.
+- `skills[].source.type: github` for explicitly listing one GitHub skill folder.
+
+GitHub repository-wide include globs are parsed but not expanded yet. For now,
+list GitHub skills explicitly under `skills`.
 
 ## Design Notes
 
@@ -52,3 +88,5 @@ skillrouter index-source github:lisiqi1983/skillrouter-sources@main
 - They may add curated tags and notes.
 - They do not embed third-party skill package contents.
 - They should be hashable and cacheable.
+- Static snapshots can be published through GitHub Pages, Releases, or any
+  mirror that serves plain files.

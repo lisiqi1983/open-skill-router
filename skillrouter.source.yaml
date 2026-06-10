@@ -1,0 +1,24 @@
+schema_version: "skillrouter.source/v1"
+name: "open-skill-router-public"
+description: "Public demo and entry skills published by the Open Skill Router repository."
+maintainer: "Open Skill Router maintainers"
+updated_at: "2026-06-10"
+
+sources:
+  - type: local
+    path: "examples/mock-skills"
+    tags:
+      - example
+      - demo
+    notes: "Mock skills used for demos, smoke tests, and static index validation."
+
+skills:
+  - id: "open-skill-router.entry"
+    source:
+      type: local
+      path: "skills/open-skill-router"
+    tags:
+      - router
+      - discovery
+      - mcp
+    notes: "Universal entry skill for routing skill discovery and installation through Open Skill Router."

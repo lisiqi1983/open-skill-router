@@ -17,6 +17,7 @@
   "dependencies": {
     "@openskillrouter/cache": "workspace:*",
     "@openskillrouter/core": "workspace:*",
+    "@openskillrouter/indexer": "workspace:*",
     "@openskillrouter/mcp-server": "workspace:*",
     "commander": "^14.0.0"
   },

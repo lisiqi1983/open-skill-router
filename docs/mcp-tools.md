@@ -48,7 +48,8 @@ Input:
 ```json
 {
   "task": "分析这个专利交底书，评估授权概率，输出 PDF 报告",
-  "source_root": "examples/mock-skills",
+  "static_source": "public",
+  "source_registry": ".skillrouter/sources.json",
   "privacy_mode": "balanced",
   "recommendation_mode": "fast_metadata",
   "max_results": 5,
@@ -69,7 +70,11 @@ Input:
 
 Notes:
 
+- Use one of `source_root`, `static_source`, or `index_path`.
 - `source_root` triggers live discovery of local `SKILL.md` files.
+- `static_source` can be a configured source name, local static index
+  directory, `skills.jsonl` file, or HTTP(S) static index URL.
+- `source_registry` resolves configured names such as `public`.
 - `index_path` can be used instead of `source_root`; otherwise the project
   index path is used.
 - `include_candidate_pack` defaults the mode to `full_skill_rerank` so the

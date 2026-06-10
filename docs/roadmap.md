@@ -153,13 +153,15 @@ Goal: publish reusable skill metadata without operating a database service.
 
 Deliverables:
 
-- Indexer app.
-- `skillrouter.source.yaml` ingestion.
-- JSONL snapshot output.
-- Checksums.
-- GitHub Actions scheduled indexing.
-- GitHub Pages publishing.
-- CLI support for remote snapshot sources.
+- [x] Indexer app.
+- [x] `skillrouter.source.yaml` ingestion.
+- [x] JSONL snapshot output.
+- [x] Checksums.
+- [x] GitHub Actions scheduled indexing.
+- [x] GitHub Pages publishing.
+- [x] CLI support for local and remote snapshot sources.
+- [x] Source registry commands.
+- [x] MCP `recommend_skills.static_source` support.
 
 Acceptance:
 
@@ -167,6 +169,10 @@ Acceptance:
 skillrouter source add https://example.com/open-skill-router/index/skills.jsonl
 skillrouter recommend "分析专利交底书" --source public
 ```
+
+Status: implemented. M4 supports local source discovery and explicit local or
+GitHub skill entries in source manifests. Repository-wide GitHub include globs
+are parsed but not expanded yet.
 
 ## M5: Cloud or Self-Hosted API
 

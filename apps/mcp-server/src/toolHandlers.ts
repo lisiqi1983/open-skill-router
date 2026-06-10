@@ -13,8 +13,11 @@ import {
 } from "@openskillrouter/cache";
 import {
   defaultProjectIndexPath,
+  defaultSourceRegistryPath,
   discoverLocalSkills,
   readLocalSkillIndex,
+  readStaticSkillIndex,
+  resolveSourceRegistryEntry,
   recommendSkills,
   type ModelRerankOutput,
   type RecommendationMode,
@@ -24,6 +27,8 @@ export interface RecommendSkillsToolInput {
   task: string;
   index_path?: string;
   source_root?: string;
+  static_source?: string;
+  source_registry?: string;
   privacy_mode?: "strict" | "balanced" | "cloud";
   recommendation_mode?: RecommendationMode;
   max_results?: number;
@@ -76,9 +81,7 @@ export interface RecordFeedbackToolInput {
 export async function recommendSkillsTool(
   input: RecommendSkillsToolInput,
 ): Promise<Record<string, unknown>> {
-  const index = input.source_root
-    ? await discoverLocalSkills(input.source_root)
-    : await readLocalSkillIndex(input.index_path ?? defaultProjectIndexPath());
+  const index = await readRecommendationIndex(input);
   const mode =
     input.include_candidate_pack && !input.recommendation_mode
       ? "full_skill_rerank"
@@ -92,6 +95,21 @@ export async function recommendSkillsTool(
     privacyMode: input.privacy_mode,
     modelRerank: input.model_rerank,
   }) as unknown as Record<string, unknown>;
+}
+
+async function readRecommendationIndex(input: RecommendSkillsToolInput) {
+  if (input.source_root) {
+    return discoverLocalSkills(input.source_root);
+  }
+  if (input.static_source) {
+    const registryPath = input.source_registry ?? defaultSourceRegistryPath();
+    const registeredSource = await resolveSourceRegistryEntry(
+      input.static_source,
+      registryPath,
+    );
+    return readStaticSkillIndex(registeredSource?.url ?? input.static_source);
+  }
+  return readLocalSkillIndex(input.index_path ?? defaultProjectIndexPath());
 }
 
 export async function inspectSkillTool(
