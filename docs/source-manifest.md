@@ -98,3 +98,19 @@ list GitHub skills explicitly under `skills`.
 - They should be hashable and cacheable.
 - Static snapshots can be published through GitHub Pages, Releases, or any
   mirror that serves plain files.
+
+## Public Curation Policy
+
+Use two tracks when researching real Skill sources:
+
+- Local track: personal or machine-local Skill repositories are indexed and
+  analyzed locally only. Keep their manifests, catalog analysis outputs, and
+  notes out of the public repository unless the user explicitly promotes a
+  cleaned version.
+- Public track: publish only sources that are already public and reviewable.
+  Before adding a public Skill to a committed manifest, record its source
+  locator, stable ref or version strategy, curation tags, risk posture, and any
+  license or redistribution concern in the manifest notes or related docs.
+
+Published static indexes are for discovery metadata. They should not expose
+private local paths or unpublished Skill bodies.

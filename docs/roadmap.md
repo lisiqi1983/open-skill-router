@@ -382,3 +382,30 @@ shape, including dimension coverage, matrix slices, skill profiles, and gaps.
 
 Status: implemented. This is the observability layer for future tensor-style
 interaction scoring and feedback-tuned weights.
+
+## M11: Real Skill Source Curation
+
+Goal: build the first real Skill source seed set while preserving a strict
+boundary between local/private research and publishable public sources.
+
+Deliverables:
+
+- [ ] Local-only research workflow for personal or machine-local Skill roots.
+- [ ] Public source curation checklist covering locator, license posture,
+      version strategy, risk profile, tags, and notes.
+- [ ] Public seed manifest containing only reviewable public Skill sources.
+- [ ] Catalog analysis report for the public seed manifest.
+- [ ] Documentation describing how local findings can be promoted into cleaned
+      public taxonomy rules without exposing private inventories.
+
+Acceptance:
+
+```bash
+skillrouter index-source ./skillrouter.public-seed.yaml --out ./public/open-skill-router/index
+skillrouter catalog analyze --source ./public/open-skill-router/index --json
+```
+
+Local/personal Skill research remains outside the public repository. Public
+manifests include only public, reviewable source locators and curated metadata.
+
+Status: planned.
