@@ -12,3 +12,6 @@ scores and safety actions, but it does not call a model provider.
 Static index support lives here too: source manifest parsing, JSONL snapshot
 reading/writing, checksum verification, and source registry files. Fetching and
 building snapshots from live sources belongs to the indexer app.
+
+Mirror failover, remote snapshot caching, and source health checks are also
+implemented in core so CLI and MCP callers share the same source semantics.

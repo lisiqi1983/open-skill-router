@@ -10,6 +10,7 @@ import {
   resolveSourceRegistryEntry,
 } from "./sourceRegistry.js";
 import {
+  checkStaticSourceHealth,
   parseStaticSkillRecords,
   readStaticSkillIndex,
   writeStaticSkillIndex,
@@ -81,7 +82,11 @@ skills:
     await mkdir(root, { recursive: true });
 
     await addSourceRegistryEntry(
-      { name: "public", url: "https://example.com/skills/" },
+      {
+        name: "public",
+        url: "https://example.com/skills/",
+        mirrors: ["https://mirror.example.com/skills/"],
+      },
       registryPath,
     );
 
@@ -89,7 +94,120 @@ skills:
     await expect(
       resolveSourceRegistryEntry("public", registryPath),
     ).resolves.toEqual(
-      expect.objectContaining({ url: "https://example.com/skills/" }),
+      expect.objectContaining({
+        url: "https://example.com/skills/",
+        mirrors: ["https://mirror.example.com/skills/"],
+      }),
     );
   });
+
+  it("fails over from an unavailable source to a mirror", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "skillrouter-failover-"));
+    const out = path.join(root, "public-index");
+    const index = await discoverLocalSkills("../../examples/mock-skills", {
+      now: new Date("2026-06-10T00:00:00.000Z"),
+    });
+    await writeStaticSkillIndex(index, out, {
+      name: "mock-skills",
+      now: new Date("2026-06-10T00:00:00.000Z"),
+    });
+
+    const loaded = await readStaticSkillIndex(["missing-source", out]);
+    expect(loaded.sourceRoot).toBe(out);
+    expect(loaded.skills).toHaveLength(3);
+  });
+
+  it("caches remote snapshots and falls back to cache", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "skillrouter-cache-"));
+    const out = path.join(root, "public-index");
+    const cache = path.join(root, "cache");
+    const index = await discoverLocalSkills("../../examples/mock-skills", {
+      now: new Date("2026-06-10T00:00:00.000Z"),
+    });
+    await writeStaticSkillIndex(index, out, {
+      name: "mock-skills",
+      now: new Date("2026-06-10T00:00:00.000Z"),
+    });
+
+    const files = await staticFilesForFetch(out);
+    const fetchOk = fakeFetch(files);
+    const source = "https://example.com/index/";
+    const first = await readStaticSkillIndex(source, {
+      fetchImpl: fetchOk,
+      cacheDir: cache,
+    });
+    expect(first.skills).toHaveLength(3);
+
+    const second = await readStaticSkillIndex(source, {
+      fetchImpl: fakeFetch({}),
+      cacheDir: cache,
+    });
+    expect(second.skills).toHaveLength(3);
+  });
+
+  it("reports source health and checksum mismatches across mirrors", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "skillrouter-health-"));
+    const primary = path.join(root, "primary");
+    const mirror = path.join(root, "mirror");
+    const index = await discoverLocalSkills("../../examples/mock-skills", {
+      now: new Date("2026-06-10T00:00:00.000Z"),
+    });
+    await writeStaticSkillIndex(index, primary, {
+      name: "primary",
+      now: new Date("2026-06-10T00:00:00.000Z"),
+    });
+    await writeStaticSkillIndex(
+      { ...index, skills: index.skills.slice(0, 2) },
+      mirror,
+      {
+        name: "mirror",
+        now: new Date("2026-06-10T00:00:00.000Z"),
+      },
+    );
+
+    const report = await checkStaticSourceHealth("public", [primary, mirror], {
+      now: new Date("2026-06-10T00:00:00.000Z"),
+    });
+
+    expect(report.checks).toEqual([
+      expect.objectContaining({
+        source: primary,
+        ok: true,
+        role: "primary",
+        checksumMatchesPrimary: true,
+      }),
+      expect.objectContaining({
+        source: mirror,
+        ok: true,
+        role: "mirror",
+        checksumMatchesPrimary: false,
+      }),
+    ]);
+  });
 });
+
+async function staticFilesForFetch(
+  out: string,
+): Promise<Record<string, string>> {
+  return {
+    "https://example.com/index/index.json": await readFile(
+      path.join(out, "index.json"),
+      "utf8",
+    ),
+    "https://example.com/index/skills.jsonl": await readFile(
+      path.join(out, "skills.jsonl"),
+      "utf8",
+    ),
+  };
+}
+
+function fakeFetch(files: Record<string, string>): typeof fetch {
+  return (async (input: Parameters<typeof fetch>[0]) => {
+    const url = String(input);
+    const content = files[url];
+    if (content === undefined) {
+      return new Response("not found", { status: 404 });
+    }
+    return new Response(content, { status: 200 });
+  }) as typeof fetch;
+}

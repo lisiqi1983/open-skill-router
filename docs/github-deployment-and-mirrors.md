@@ -107,9 +107,33 @@ CLI usage:
 
 ```bash
 skillrouter source add https://<owner>.github.io/<repo>/open-skill-router/index/ public
+skillrouter source add https://<owner>.github.io/<repo>/open-skill-router/index/ public --mirror https://mirror.example.com/open-skill-router/index/
+skillrouter source health public
 skillrouter recommend "帮我生成一份产品发布 PPT" --source public
 ```
 
 Mirror hosts should serve the same three files with identical relative paths.
 `skills.jsonl.sha256` allows clients and users to compare mirrors against the
 canonical snapshot.
+
+## M4.5 Failover and Health
+
+Source registry entries support one primary URL and zero or more mirrors:
+
+```json
+{
+  "name": "public",
+  "url": "https://lisiqi1983.github.io/open-skill-router/open-skill-router/index/",
+  "mirrors": ["https://mirror.example.com/open-skill-router/index/"]
+}
+```
+
+When recommending with `--source public`, the CLI tries the primary URL first and
+then mirrors in order. Successful remote reads are cached locally under
+`.skillrouter/cache/static-sources`; temporary network failures can fall back to
+the cached snapshot for the same URL.
+
+`skillrouter source health public` checks each configured URL, validates the
+manifest checksum, and reports whether mirror hashes match the primary. A mirror
+with a different `skillsSha256` should be treated as stale or divergent until it
+is refreshed.

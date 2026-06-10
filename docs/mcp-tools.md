@@ -74,7 +74,10 @@ Notes:
 - `source_root` triggers live discovery of local `SKILL.md` files.
 - `static_source` can be a configured source name, local static index
   directory, `skills.jsonl` file, or HTTP(S) static index URL.
-- `source_registry` resolves configured names such as `public`.
+- `source_registry` resolves configured names such as `public`; configured
+  mirrors are tried in order after the primary URL.
+- Remote static sources are cached locally and can be reused after temporary
+  network failures.
 - `index_path` can be used instead of `source_root`; otherwise the project
   index path is used.
 - `include_candidate_pack` defaults the mode to `full_skill_rerank` so the

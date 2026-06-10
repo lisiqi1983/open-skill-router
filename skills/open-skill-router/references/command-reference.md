@@ -22,8 +22,9 @@ Build and use a static source:
 
 ```bash
 skillrouter index-source ./skillrouter.source.yaml --out ./public/index
-skillrouter source add ./public/index public
+skillrouter source add ./public/index public --mirror https://mirror.example.com/index/
 skillrouter source list
+skillrouter source health public
 skillrouter recommend "帮我生成一份产品发布 PPT" --source public
 ```
 

@@ -61,7 +61,16 @@ const directRecommend = JSON.parse(
 );
 assertPresentationDeck(directRecommend, "direct static source");
 
-await runCli(["source", "add", outDir, "public", "--registry", registryPath]);
+await runCli([
+  "source",
+  "add",
+  path.join(root, "missing-index"),
+  "public",
+  "--mirror",
+  outDir,
+  "--registry",
+  registryPath,
+]);
 const registryRecommend = JSON.parse(
   await runCli([
     "recommend",
@@ -75,7 +84,23 @@ const registryRecommend = JSON.parse(
 );
 assertPresentationDeck(registryRecommend, "registered static source");
 
-console.log("Smoke M4 static index passed.");
+const health = JSON.parse(
+  await runCli([
+    "source",
+    "health",
+    "public",
+    "--registry",
+    registryPath,
+    "--json",
+  ]),
+);
+if (health.checks?.[0]?.ok !== false || health.checks?.[1]?.ok !== true) {
+  throw new Error(
+    `Unexpected source health report:\n${JSON.stringify(health)}`,
+  );
+}
+
+console.log("Smoke M4/M4.5 static index passed.");
 
 async function runCli(args) {
   const { stdout } = await execFileAsync(process.execPath, [cliPath, ...args], {

@@ -174,6 +174,34 @@ Status: implemented. M4 supports local source discovery and explicit local or
 GitHub skill entries in source manifests. Repository-wide GitHub include globs
 are parsed but not expanded yet.
 
+## M4.5: Mirror Failover and Source Health
+
+Goal: make static source distribution resilient across mirrors without adding a
+server-side database.
+
+Deliverables:
+
+- [x] Ordered mirror URLs in source registry entries.
+- [x] `skillrouter source add --mirror`.
+- [x] `skillrouter source health`.
+- [x] Static source failover during recommendation.
+- [x] Remote static snapshot cache under SkillRouter home.
+- [x] Mirror checksum comparison against the primary source.
+- [x] Static index smoke test covering mirror failover and health.
+
+Acceptance:
+
+```bash
+skillrouter source add https://primary.example/index/ public --mirror https://mirror.example/index/
+skillrouter source health public
+skillrouter recommend "帮我生成 PPT" --source public
+```
+
+The CLI reports primary and mirror health, flags checksum divergence, and can
+recommend from a mirror if the primary source is unavailable.
+
+Status: implemented.
+
 ## M5: Cloud or Self-Hosted API
 
 Goal: add an optional API for teams that want shared indexing and feedback.

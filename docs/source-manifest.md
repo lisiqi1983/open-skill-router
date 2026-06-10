@@ -43,8 +43,9 @@ skills:
 
 ```bash
 skillrouter index-source ./skillrouter.source.yaml --out ./public/index
-skillrouter source add ./public/index public
+skillrouter source add ./public/index public --mirror https://mirror.example.com/index/
 skillrouter source list
+skillrouter source health public
 skillrouter recommend "分析专利交底书" --source public
 ```
 
@@ -69,6 +70,13 @@ and checksum files. `skills.jsonl` contains one
 `skillrouter.skill-record/v1` record per skill. The CLI verifies
 `skills.jsonl` against `skillsSha256` when reading a static index through
 `--source`.
+
+Remote static indexes are cached under the SkillRouter home directory at
+`.skillrouter/cache/static-sources`. If the network source is temporarily
+unavailable, the reader can fall back to the last cached snapshot for that URL.
+
+`source health` checks the primary source and mirrors, validates checksums, and
+reports whether each mirror's `skills.jsonl` hash matches the primary source.
 
 ## Supported Inputs
 

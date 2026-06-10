@@ -69,7 +69,8 @@ skillrouter recommend "帮我生成一份产品发布 PPT"
 skillrouter recommend "帮我生成一份产品发布 PPT" --candidate-pack --json
 skillrouter recommend "帮我生成一份产品发布 PPT" --model-rerank rerank.json
 skillrouter index-source ./skillrouter.source.yaml --out ./public/index
-skillrouter source add ./public/index public
+skillrouter source add ./public/index public --mirror https://mirror.example.com/index/
+skillrouter source health public
 skillrouter recommend "帮我生成一份产品发布 PPT" --source public
 skillrouter inspect github:owner/repo/skills/example@main
 skillrouter install github:owner/repo/skills/example@main --agent generic --scope user
@@ -82,14 +83,15 @@ skillrouter serve-mcp
 
 ## Development Status
 
-M0.5 through M4 paths are implemented for local and GitHub skill sources. The
+M0.5 through M4.5 paths are implemented for local and GitHub skill sources. The
 current runtime can parse `SKILL.md`, build a local index, generate candidate
 packs with model-rerank contracts, merge caller-provided model rerank JSON with
 deterministic scores, preserve safety gates, publish static JSONL snapshots with
-checksums, read named local or remote snapshot sources, inspect skill sources,
-install skills into a local cache and generic agent target, write lockfiles,
-infer permissions, score risk, check updates, apply safe updates, and expose
-the same flow to local agents through MCP tools.
+checksums, read named local or remote snapshot sources with mirror failover,
+cache remote static snapshots locally, diagnose source health, inspect skill
+sources, install skills into a local cache and generic agent target, write
+lockfiles, infer permissions, score risk, check updates, apply safe updates, and
+expose the same flow to local agents through MCP tools.
 
 Try it locally:
 
@@ -101,7 +103,8 @@ node apps/cli/dist/index.js recommend "帮我生成一份产品发布 PPT"
 node apps/cli/dist/index.js recommend "分析专利交底书，评估授权概率，输出 PDF 报告" --candidate-pack --json
 node apps/cli/dist/index.js recommend "帮我生成一份产品发布 PPT" --model-rerank rerank.json --json
 node apps/cli/dist/index.js index-source skillrouter.source.yaml --out public/open-skill-router/index
-node apps/cli/dist/index.js source add public/open-skill-router/index public
+node apps/cli/dist/index.js source add public/open-skill-router/index public --mirror https://mirror.example.com/open-skill-router/index/
+node apps/cli/dist/index.js source health public
 node apps/cli/dist/index.js recommend "帮我生成一份产品发布 PPT" --source public
 node apps/cli/dist/index.js init --agent generic --scope user
 node apps/cli/dist/index.js inspect local:skills/open-skill-router

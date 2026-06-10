@@ -17,7 +17,7 @@ import {
   discoverLocalSkills,
   readLocalSkillIndex,
   readStaticSkillIndex,
-  resolveSourceRegistryEntry,
+  resolveSourceUrls,
   recommendSkills,
   type ModelRerankOutput,
   type RecommendationMode,
@@ -103,11 +103,9 @@ async function readRecommendationIndex(input: RecommendSkillsToolInput) {
   }
   if (input.static_source) {
     const registryPath = input.source_registry ?? defaultSourceRegistryPath();
-    const registeredSource = await resolveSourceRegistryEntry(
-      input.static_source,
-      registryPath,
+    return readStaticSkillIndex(
+      await resolveSourceUrls(input.static_source, registryPath),
     );
-    return readStaticSkillIndex(registeredSource?.url ?? input.static_source);
   }
   return readLocalSkillIndex(input.index_path ?? defaultProjectIndexPath());
 }

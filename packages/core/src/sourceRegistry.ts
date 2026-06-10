@@ -57,6 +57,7 @@ export async function addSourceRegistryEntry(
       {
         name: entry.name,
         url: entry.url,
+        mirrors: entry.mirrors,
         addedAt: now,
         enabled: entry.enabled ?? true,
       },
@@ -86,6 +87,18 @@ export async function resolveSourceRegistryEntry(
 ): Promise<SkillSourceRegistryEntry | undefined> {
   const registry = await readSourceRegistry(registryPath);
   return registry.sources.find((source) => source.name === nameOrUrl);
+}
+
+export async function resolveSourceUrls(
+  nameOrUrl: string,
+  registryPath = defaultSourceRegistryPath(),
+): Promise<string[]> {
+  const entry = await resolveSourceRegistryEntry(nameOrUrl, registryPath);
+  if (!entry) return [nameOrUrl];
+  if (!entry.enabled) {
+    throw new Error(`Static source is disabled: ${entry.name}`);
+  }
+  return [entry.url, ...(entry.mirrors ?? [])];
 }
 
 function emptySourceRegistry(): SkillSourceRegistry {

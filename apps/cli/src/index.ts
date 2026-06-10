@@ -17,6 +17,7 @@ import {
   defaultProjectIndexPath,
   defaultSourceRegistryPath,
   addSourceRegistryEntry,
+  checkStaticSourceHealth,
   discoverLocalSkills,
   readStaticSkillIndex,
   readLocalSkillIndex,
@@ -24,6 +25,7 @@ import {
   recommendSkills,
   removeSourceRegistryEntry,
   resolveSourceRegistryEntry,
+  resolveSourceUrls,
   writeLocalSkillIndex,
   type ModelRerankOutput,
   type RecommendationMode,
@@ -257,6 +259,7 @@ sourceCommand
     "Static index URL, directory, index.json, or skills.jsonl.",
   )
   .argument("[name]", "Source name.", "public")
+  .option("--mirror <url...>", "Mirror static source URL(s).")
   .option(
     "--registry <path>",
     "Source registry path.",
@@ -267,10 +270,10 @@ sourceCommand
     async (
       url: string,
       name: string,
-      options: { registry: string; json?: boolean },
+      options: { registry: string; mirror?: string[]; json?: boolean },
     ) => {
       const registry = await addSourceRegistryEntry(
-        { name, url },
+        { name, url, mirrors: options.mirror },
         options.registry,
       );
 
@@ -280,6 +283,9 @@ sourceCommand
       }
 
       console.log(`Added source "${name}": ${url}`);
+      if (options.mirror && options.mirror.length > 0) {
+        console.log(`Mirrors: ${options.mirror.join(", ")}`);
+      }
       console.log(`Registry: ${options.registry}`);
     },
   );
@@ -309,9 +315,55 @@ sourceCommand
     for (const source of registry.sources) {
       console.log(`${source.name} ${source.enabled ? "enabled" : "disabled"}`);
       console.log(`  URL: ${source.url}`);
+      if (source.mirrors && source.mirrors.length > 0) {
+        console.log(`  Mirrors: ${source.mirrors.join(", ")}`);
+      }
       console.log(`  Added: ${source.addedAt}`);
     }
   });
+
+sourceCommand
+  .command("health")
+  .description("Check a static source and its mirrors.")
+  .argument("<name-or-url>", "Source name or direct static source URL/path.")
+  .option(
+    "--registry <path>",
+    "Source registry path.",
+    defaultSourceRegistryPath(),
+  )
+  .option("--json", "Print machine-readable JSON.")
+  .action(
+    async (
+      nameOrUrl: string,
+      options: { registry: string; json?: boolean },
+    ) => {
+      const sources = await resolveSourceUrls(nameOrUrl, options.registry);
+      const report = await checkStaticSourceHealth(nameOrUrl, sources);
+
+      if (options.json) {
+        console.log(JSON.stringify(report, null, 2));
+        return;
+      }
+
+      console.log(`Source: ${nameOrUrl}`);
+      console.log(`Selected: ${report.selectedSource ?? "none"}`);
+      for (const check of report.checks) {
+        console.log(
+          `${check.ok ? "ok" : "failed"} ${check.role}: ${check.source}`,
+        );
+        if (check.ok) {
+          console.log(`  Skills: ${check.skillCount}`);
+          console.log(`  SHA256: ${check.skillsSha256}`);
+          console.log(
+            `  Matches primary: ${check.checksumMatchesPrimary ? "yes" : "no"}`,
+          );
+          if (check.cachePath) console.log(`  Cache: ${check.cachePath}`);
+        } else {
+          console.log(`  Error: ${check.error}`);
+        }
+      }
+    },
+  );
 
 sourceCommand
   .command("remove")
@@ -700,7 +752,11 @@ async function readRecommendationIndex(options: {
     options.source,
     options.sourceRegistry,
   );
-  return readStaticSkillIndex(registeredSource?.url ?? options.source);
+  return readStaticSkillIndex(
+    registeredSource
+      ? [registeredSource.url, ...(registeredSource.mirrors ?? [])]
+      : options.source,
+  );
 }
 
 function parseRecommendationMode(value: string): RecommendationMode {

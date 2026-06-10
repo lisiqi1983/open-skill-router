@@ -103,6 +103,7 @@ export interface StaticSkillRecord {
 export interface SkillSourceRegistryEntry {
   name: string;
   url: string;
+  mirrors?: string[];
   addedAt: string;
   enabled: boolean;
 }
@@ -111,6 +112,26 @@ export interface SkillSourceRegistry {
   schemaVersion: "skillrouter.sources/v1";
   updatedAt: string;
   sources: SkillSourceRegistryEntry[];
+}
+
+export interface StaticSourceHealthCheck {
+  source: string;
+  role: "primary" | "mirror" | "direct";
+  ok: boolean;
+  generatedAt?: string;
+  skillCount?: number;
+  skillsSha256?: string;
+  checksumMatchesPrimary?: boolean;
+  cachePath?: string;
+  error?: string;
+}
+
+export interface StaticSourceHealthReport {
+  schemaVersion: "skillrouter.source-health/v1";
+  checkedAt: string;
+  nameOrUrl: string;
+  selectedSource?: string;
+  checks: StaticSourceHealthCheck[];
 }
 
 export interface CandidatePack {
