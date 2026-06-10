@@ -257,3 +257,34 @@ verify after sync.
 Status: implemented. GitHub Pages remains the canonical static source, while
 GitHub Release assets provide a second distribution channel for CDN and manual
 mirrors.
+
+## M7: Unified Skill Catalog
+
+Goal: classify local and remote skills into the same multidimensional catalog so
+recommendation can evolve beyond lexical matching.
+
+Deliverables:
+
+- [x] `SkillCatalog` and `SkillCatalogCard` data model.
+- [x] Dimension extraction for intents, domains, capabilities, inputs, outputs, environments, workflow stages, languages, risk, and source type.
+- [x] Catalog summary counts.
+- [x] CLI `skillrouter catalog build`.
+- [x] Local-index catalog support.
+- [x] Remote static-source catalog support.
+- [x] M7 smoke test covering local catalog and HTTP static source catalog.
+- [x] Documentation for local/remote sync and multidimensional matching.
+
+Acceptance:
+
+```bash
+skillrouter catalog build --index .skillrouter/index.json --out .skillrouter/catalog.json
+skillrouter catalog build --source https://example.com/open-skill-router/index/ --json
+pnpm test:catalog
+```
+
+Both local and remote skills produce `skillrouter.catalog/v1` JSON with the same
+dimension schema.
+
+Status: implemented as a read-only catalog layer. Recommendation still uses the
+existing deterministic scorer, with catalog dimensions ready for the next scoring
+upgrade.

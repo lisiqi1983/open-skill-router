@@ -37,6 +37,18 @@ skillrouter recommend "帮我生成一份产品发布 PPT" --api http://127.0.0.
 
 Do not use `--api` for `strict_local` tasks.
 
+Build a multidimensional catalog from local or remote skills:
+
+```bash
+skillrouter catalog build --index .skillrouter/index.json --out .skillrouter/catalog.json
+skillrouter catalog build --source public --json
+skillrouter catalog build --source https://example.com/open-skill-router/index/ --json
+```
+
+Catalogs summarize skills into shared dimensions: domains, intents, inputs,
+outputs, environments, workflow stages, languages, risk levels, and source
+types.
+
 Inspect a skill:
 
 ```bash

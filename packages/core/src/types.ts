@@ -35,6 +35,60 @@ export interface LocalSkillIndex {
   skills: IndexedSkill[];
 }
 
+export interface SkillCatalog {
+  schemaVersion: "skillrouter.catalog/v1";
+  generatedAt: string;
+  sourceRoot: string;
+  skillCount: number;
+  cards: SkillCatalogCard[];
+  summary: SkillCatalogSummary;
+}
+
+export interface SkillCatalogCard {
+  skillId: string;
+  name: string;
+  displayName?: string;
+  description: string;
+  locator: string;
+  sourceType: SkillReference["sourceType"];
+  sourceUrl: string;
+  dimensions: SkillCatalogDimensions;
+  qualitySignals: SkillReference["qualitySignals"];
+  indexedAt: string;
+  updatedAt?: string;
+  contentHash?: string;
+}
+
+export interface SkillCatalogDimensions {
+  intents: string[];
+  domains: string[];
+  capabilities: string[];
+  inputFormats: string[];
+  outputFormats: string[];
+  environments: string[];
+  workflowStages: string[];
+  languages: string[];
+  riskLevel: RiskLevel;
+}
+
+export interface SkillCatalogSummary {
+  sourceTypes: SkillCatalogCount[];
+  domains: SkillCatalogCount[];
+  intents: SkillCatalogCount[];
+  capabilities: SkillCatalogCount[];
+  inputFormats: SkillCatalogCount[];
+  outputFormats: SkillCatalogCount[];
+  environments: SkillCatalogCount[];
+  workflowStages: SkillCatalogCount[];
+  languages: SkillCatalogCount[];
+  riskLevels: SkillCatalogCount[];
+}
+
+export interface SkillCatalogCount {
+  value: string;
+  count: number;
+}
+
 export interface SourceManifest {
   schema_version: "skillrouter.source/v1";
   name: string;

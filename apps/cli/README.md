@@ -8,6 +8,7 @@ Initial commands:
 - `skillrouter index`
 - `skillrouter index-source`
 - `skillrouter recommend`
+- `skillrouter catalog build`
 - `skillrouter inspect`
 - `skillrouter install`
 - `skillrouter list`

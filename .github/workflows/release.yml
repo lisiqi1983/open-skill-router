@@ -58,6 +58,7 @@ jobs:
           pnpm test:mcp
           pnpm test:static
           pnpm test:api
+          pnpm test:catalog
 
       - name: Build release bundle
         run: pnpm release:bundle

@@ -17,6 +17,7 @@
     "test:api": "pnpm build && node scripts/smoke-m5-api.mjs",
     "release:bundle": "pnpm build && node scripts/build-release-bundle.mjs",
     "test:release": "pnpm release:bundle && node scripts/smoke-m6-release-bundle.mjs",
+    "test:catalog": "pnpm build && node scripts/smoke-m7-catalog.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

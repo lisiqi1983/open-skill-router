@@ -68,10 +68,12 @@ skillrouter index ./examples/mock-skills
 skillrouter recommend "帮我生成一份产品发布 PPT"
 skillrouter recommend "帮我生成一份产品发布 PPT" --candidate-pack --json
 skillrouter recommend "帮我生成一份产品发布 PPT" --model-rerank rerank.json
+skillrouter catalog build --index .skillrouter/index.json --out .skillrouter/catalog.json
 skillrouter index-source ./skillrouter.source.yaml --out ./public/index
 skillrouter source add ./public/index public --mirror https://mirror.example.com/index/
 skillrouter source health public
 skillrouter recommend "帮我生成一份产品发布 PPT" --source public
+skillrouter catalog build --source public --json
 open-skill-router-api serve --source ./public/index --port 8765
 skillrouter recommend "帮我生成一份产品发布 PPT" --api http://127.0.0.1:8765
 skillrouter inspect github:owner/repo/skills/example@main
@@ -85,7 +87,7 @@ skillrouter serve-mcp
 
 ## Development Status
 
-M0.5 through M6 paths are implemented for local and GitHub skill sources. The
+M0.5 through M7 paths are implemented for local and GitHub skill sources. The
 current runtime can parse `SKILL.md`, build a local index, generate candidate
 packs with model-rerank contracts, merge caller-provided model rerank JSON with
 deterministic scores, preserve safety gates, publish static JSONL snapshots with
@@ -94,8 +96,9 @@ cache remote static snapshots locally, diagnose source health, serve optional
 HTTP recommendations and feedback, inspect skill sources, install skills into a
 local cache and generic agent target, write lockfiles, infer permissions, score
 risk, check updates, apply safe updates, expose the same flow to local agents
-through MCP tools, and build verified release bundles for GitHub Releases and
-static mirrors.
+through MCP tools, build verified release bundles for GitHub Releases and static
+mirrors, and generate a unified multidimensional catalog for local or remote
+skills.
 
 Try it locally:
 
@@ -106,10 +109,12 @@ node apps/cli/dist/index.js index examples/mock-skills
 node apps/cli/dist/index.js recommend "帮我生成一份产品发布 PPT"
 node apps/cli/dist/index.js recommend "分析专利交底书，评估授权概率，输出 PDF 报告" --candidate-pack --json
 node apps/cli/dist/index.js recommend "帮我生成一份产品发布 PPT" --model-rerank rerank.json --json
+node apps/cli/dist/index.js catalog build --index .skillrouter/index.json --out .skillrouter/catalog.json
 node apps/cli/dist/index.js index-source skillrouter.source.yaml --out public/open-skill-router/index
 node apps/cli/dist/index.js source add public/open-skill-router/index public --mirror https://mirror.example.com/open-skill-router/index/
 node apps/cli/dist/index.js source health public
 node apps/cli/dist/index.js recommend "帮我生成一份产品发布 PPT" --source public
+node apps/cli/dist/index.js catalog build --source public --json
 node apps/api/dist/index.js serve --source public/open-skill-router/index --port 8765
 node apps/cli/dist/index.js recommend "帮我生成一份产品发布 PPT" --api http://127.0.0.1:8765
 pnpm test:release
@@ -142,6 +147,7 @@ pnpm test:mcp
 pnpm test:static
 pnpm test:api
 pnpm test:release
+pnpm test:catalog
 pnpm build
 ```
 
@@ -154,5 +160,6 @@ See:
 - [MCP Tools](docs/mcp-tools.md)
 - [HTTP API](docs/api.md)
 - [Release Packaging](docs/release.md)
+- [Unified Skill Catalog](docs/skill-catalog.md)
 - [Model-Assisted Recommendation](docs/model-assisted-recommendation.md)
 - [GitHub Deployment and Mirrors](docs/github-deployment-and-mirrors.md)

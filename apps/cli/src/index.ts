@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-import { readFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import path from "node:path";
 import { Command } from "commander";
 import {
   applySafeUpdates,
@@ -17,6 +18,7 @@ import {
   defaultProjectIndexPath,
   defaultSourceRegistryPath,
   addSourceRegistryEntry,
+  buildSkillCatalog,
   checkStaticSourceHealth,
   discoverLocalSkills,
   readStaticSkillIndex,
@@ -27,6 +29,7 @@ import {
   resolveSourceRegistryEntry,
   resolveSourceUrls,
   writeLocalSkillIndex,
+  type SkillCatalog,
   type ModelRerankOutput,
   type RecommendationMode,
 } from "@openskillrouter/core";
@@ -223,6 +226,54 @@ program
           }
         }
       }
+    },
+  );
+
+const catalogCommand = program
+  .command("catalog")
+  .description("Build and inspect a multidimensional Skill Catalog.");
+
+catalogCommand
+  .command("build")
+  .description("Build a Skill Catalog from a local index or static source.")
+  .option("-i, --index <path>", "Local index path.", defaultProjectIndexPath())
+  .option(
+    "--source <name-or-url>",
+    "Static source name, directory, JSONL file, or URL.",
+  )
+  .option(
+    "--source-registry <path>",
+    "Source registry path.",
+    defaultSourceRegistryPath(),
+  )
+  .option("-o, --out <path>", "Write catalog JSON to this path.")
+  .option("--json", "Print machine-readable JSON.")
+  .action(
+    async (options: {
+      index: string;
+      source?: string;
+      sourceRegistry: string;
+      out?: string;
+      json?: boolean;
+    }) => {
+      const catalog = buildSkillCatalog(
+        await readRecommendationIndex({
+          indexPath: options.index,
+          source: options.source,
+          sourceRegistry: options.sourceRegistry,
+        }),
+      );
+
+      if (options.out) {
+        await writeJsonFile(options.out, catalog);
+      }
+
+      if (options.json) {
+        console.log(JSON.stringify(catalog, null, 2));
+        return;
+      }
+
+      printCatalogSummary(catalog, options.out);
     },
   );
 
@@ -749,6 +800,11 @@ async function readJsonFile<T>(filePath: string): Promise<T> {
   return JSON.parse(raw) as T;
 }
 
+async function writeJsonFile(filePath: string, value: unknown): Promise<void> {
+  await mkdir(path.dirname(path.resolve(filePath)), { recursive: true });
+  await writeFile(filePath, `${JSON.stringify(value, null, 2)}\n`, "utf8");
+}
+
 async function readRecommendationIndex(options: {
   indexPath: string;
   source?: string;
@@ -804,6 +860,31 @@ async function recommendWithApi(
 
 function ensureTrailingSlash(value: string): string {
   return value.endsWith("/") ? value : `${value}/`;
+}
+
+function printCatalogSummary(catalog: SkillCatalog, outputPath?: string): void {
+  console.log(`Catalog: ${catalog.skillCount} skill(s).`);
+  console.log(`Source root: ${catalog.sourceRoot}`);
+  if (outputPath) console.log(`Output: ${outputPath}`);
+  printTopCounts("Source types", catalog.summary.sourceTypes);
+  printTopCounts("Domains", catalog.summary.domains);
+  printTopCounts("Intents", catalog.summary.intents);
+  printTopCounts("Inputs", catalog.summary.inputFormats);
+  printTopCounts("Outputs", catalog.summary.outputFormats);
+  printTopCounts("Environments", catalog.summary.environments);
+  printTopCounts("Workflow stages", catalog.summary.workflowStages);
+  printTopCounts("Risk levels", catalog.summary.riskLevels);
+}
+
+function printTopCounts(
+  label: string,
+  counts: Array<{ value: string; count: number }>,
+): void {
+  const rendered = counts
+    .slice(0, 8)
+    .map((item) => `${item.value}=${item.count}`)
+    .join(", ");
+  console.log(`${label}: ${rendered || "none"}`);
 }
 
 function parseRecommendationMode(value: string): RecommendationMode {
