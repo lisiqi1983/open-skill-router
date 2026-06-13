@@ -16,12 +16,16 @@ import {
 } from "@openskillrouter/cache";
 import {
   defaultProjectIndexPath,
+  defaultProjectSearchIndexPath,
   defaultSourceRegistryPath,
   addSourceRegistryEntry,
   analyzeSkillCatalog,
+  buildSkillSearchIndex,
   buildSkillCatalog,
   checkStaticSourceHealth,
   discoverLocalSkills,
+  localIndexFromSkillSearchIndex,
+  readSkillSearchIndex,
   readStaticSkillIndex,
   readLocalSkillIndex,
   readSourceRegistry,
@@ -29,7 +33,9 @@ import {
   removeSourceRegistryEntry,
   resolveSourceRegistryEntry,
   resolveSourceUrls,
+  searchSkillIndex,
   searchSkills,
+  writeSkillSearchIndex,
   writeLocalSkillIndex,
   renderSkillCatalogAnalysisMarkdown,
   type SkillCatalog,
@@ -202,6 +208,10 @@ program
     "Maximum candidates retained by search prefilter.",
     parseInteger,
   )
+  .option(
+    "--search-index <path>",
+    "Use a prebuilt persistent Skill search index for search prefiltering.",
+  )
   .action(
     async (
       task: string,
@@ -218,14 +228,25 @@ program
         scoring?: string;
         searchPrefilter?: boolean;
         searchMax?: number;
+        searchIndex?: string;
       },
     ) => {
+      if (options.api && options.searchIndex) {
+        throw new Error(
+          "--search-index is local-only; configure the API server with a search index instead.",
+        );
+      }
       const modelRerank = options.modelRerank
         ? await readJsonFile<ModelRerankOutput>(options.modelRerank)
         : undefined;
       const scoring = options.scoring
         ? await readJsonFile<RecommendationScoringConfig>(options.scoring)
         : undefined;
+      const prebuiltSearchIndex = options.searchIndex
+        ? await readSkillSearchIndex(options.searchIndex)
+        : undefined;
+      const useSearchPrefilter =
+        options.searchPrefilter || Boolean(prebuiltSearchIndex);
       const mode = options.candidatePack
         ? options.mode === "fast_metadata"
           ? "full_skill_rerank"
@@ -240,23 +261,26 @@ program
             include_candidate_pack: options.candidatePack,
             model_rerank: modelRerank,
             scoring,
-            search_prefilter: options.searchPrefilter,
+            search_prefilter: useSearchPrefilter,
             search_max_results: options.searchMax,
           })
         : recommendSkills({
-            index: await readRecommendationIndex({
-              indexPath: options.index,
-              source: options.source,
-              sourceRegistry: options.sourceRegistry,
-            }),
+            index: prebuiltSearchIndex
+              ? localIndexFromSkillSearchIndex(prebuiltSearchIndex)
+              : await readRecommendationIndex({
+                  indexPath: options.index,
+                  source: options.source,
+                  sourceRegistry: options.sourceRegistry,
+                }),
             task,
             maxResults: options.max,
             mode,
             modelRerank,
             scoring,
-            searchPrefilter: options.searchPrefilter
+            searchPrefilter: useSearchPrefilter
               ? {
                   maxResults: options.searchMax,
+                  searchIndex: prebuiltSearchIndex,
                 }
               : undefined,
           });
@@ -310,6 +334,10 @@ program
     "Source registry path.",
     defaultSourceRegistryPath(),
   )
+  .option(
+    "--search-index <path>",
+    "Use a prebuilt persistent Skill search index instead of reading a source.",
+  )
   .option("-m, --max <count>", "Maximum search hits.", parseInteger, 20)
   .option(
     "--source-type <types>",
@@ -337,6 +365,7 @@ program
         index: string;
         source?: string;
         sourceRegistry: string;
+        searchIndex?: string;
         max: number;
         sourceType?: CliSourceType[];
         risk?: CliRiskLevel[];
@@ -347,21 +376,33 @@ program
         json?: boolean;
       },
     ) => {
-      const result = searchSkills({
-        index: await readRecommendationIndex({
-          indexPath: options.index,
-          source: options.source,
-          sourceRegistry: options.sourceRegistry,
-        }),
-        query,
-        maxResults: options.max,
-        sourceTypes: options.sourceType,
-        riskLevels: options.risk,
-        domains: options.domain,
-        intents: options.intent,
-        environments: options.environment,
-        localOnly: options.localOnly,
-      });
+      const result = options.searchIndex
+        ? searchSkillIndex({
+            searchIndex: await readSkillSearchIndex(options.searchIndex),
+            query,
+            maxResults: options.max,
+            sourceTypes: options.sourceType,
+            riskLevels: options.risk,
+            domains: options.domain,
+            intents: options.intent,
+            environments: options.environment,
+            localOnly: options.localOnly,
+          })
+        : searchSkills({
+            index: await readRecommendationIndex({
+              indexPath: options.index,
+              source: options.source,
+              sourceRegistry: options.sourceRegistry,
+            }),
+            query,
+            maxResults: options.max,
+            sourceTypes: options.sourceType,
+            riskLevels: options.risk,
+            domains: options.domain,
+            intents: options.intent,
+            environments: options.environment,
+            localOnly: options.localOnly,
+          });
 
       if (options.json) {
         console.log(JSON.stringify(result, null, 2));
@@ -369,6 +410,65 @@ program
       }
 
       printSearchResults(result);
+    },
+  );
+
+const searchIndexCommand = program
+  .command("search-index")
+  .description("Build persistent search indexes for large Skill collections.");
+
+searchIndexCommand
+  .command("build")
+  .description(
+    "Build a persistent Skill search index from a local index or static source.",
+  )
+  .option("-i, --index <path>", "Local index path.", defaultProjectIndexPath())
+  .option(
+    "--source <name-or-url>",
+    "Static source name, directory, JSONL file, or URL.",
+  )
+  .option(
+    "--source-registry <path>",
+    "Source registry path.",
+    defaultSourceRegistryPath(),
+  )
+  .option(
+    "-o, --out <path>",
+    "Output persistent search index path.",
+    defaultProjectSearchIndexPath(),
+  )
+  .option("--json", "Print machine-readable JSON.")
+  .action(
+    async (options: {
+      index: string;
+      source?: string;
+      sourceRegistry: string;
+      out: string;
+      json?: boolean;
+    }) => {
+      const sourceIndex = await readRecommendationIndex({
+        indexPath: options.index,
+        source: options.source,
+        sourceRegistry: options.sourceRegistry,
+      });
+      const searchIndex = buildSkillSearchIndex(sourceIndex);
+      await writeSkillSearchIndex(searchIndex, options.out);
+
+      if (options.json) {
+        console.log(
+          JSON.stringify(
+            {
+              outputPath: options.out,
+              searchIndex,
+            },
+            null,
+            2,
+          ),
+        );
+        return;
+      }
+
+      printSearchIndexSummary(searchIndex, options.out);
     },
   );
 
@@ -970,6 +1070,21 @@ function printSearchResults(result: ReturnType<typeof searchSkills>): void {
   for (const hit of result.results) {
     printSearchHit(hit);
   }
+}
+
+function printSearchIndexSummary(
+  searchIndex: ReturnType<typeof buildSkillSearchIndex>,
+  outputPath: string,
+): void {
+  console.log(`Search index: ${searchIndex.skillCount} skill(s).`);
+  console.log(`Source root: ${searchIndex.sourceRoot}`);
+  console.log(
+    `Average document length: ${Math.round(searchIndex.averageDocumentLength)}`,
+  );
+  console.log(
+    `Document frequency terms: ${Object.keys(searchIndex.documentFrequencies).length}`,
+  );
+  console.log(`Output: ${outputPath}`);
 }
 
 function printSearchHit(hit: SkillSearchHit): void {

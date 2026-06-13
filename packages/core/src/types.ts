@@ -430,6 +430,7 @@ export interface RecommendSkillsResult {
 
 export interface RecommendSearchPrefilterOptions {
   maxResults?: number;
+  searchIndex?: SkillSearchIndex;
   sourceTypes?: SkillReference["sourceType"][];
   riskLevels?: RiskLevel[];
   domains?: string[];
@@ -449,6 +450,32 @@ export interface SearchSkillsOptions {
   intents?: string[];
   environments?: string[];
   localOnly?: boolean;
+}
+
+export interface SearchSkillIndexOptions extends Omit<
+  SearchSkillsOptions,
+  "index"
+> {
+  searchIndex: SkillSearchIndex;
+}
+
+export interface SkillSearchIndex {
+  schemaVersion: "skillrouter.search-index/v1";
+  generatedAt: string;
+  sourceRoot: string;
+  skillCount: number;
+  averageDocumentLength: number;
+  documentFrequencies: Record<string, number>;
+  documents: SkillSearchIndexDocument[];
+}
+
+export interface SkillSearchIndexDocument {
+  indexedSkill: IndexedSkill;
+  catalogCard: SkillCatalogCard;
+  text: string;
+  tokenCounts: Record<string, number>;
+  tokenCount: number;
+  skillVector: Record<string, number>;
 }
 
 export interface SearchSkillsResult {

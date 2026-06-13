@@ -63,10 +63,22 @@ returned result includes `searchPrefilter` so callers can inspect the retrieval
 stage that produced the candidate pool. Candidate packs are then generated only
 from the final recommendation set, not from the full corpus.
 
+M14 adds a persistent search index so repeated queries do not need to rebuild
+search documents from the full Skill index:
+
+```bash
+skillrouter search-index build --source public --out .skillrouter/public-search-index.json
+skillrouter search "review GitHub PR TypeScript code changes" --search-index .skillrouter/public-search-index.json --max 20
+skillrouter recommend "review GitHub PR TypeScript code changes" --search-index .skillrouter/public-search-index.json --search-max 50 --candidate-pack
+```
+
+The artifact uses schema `skillrouter.search-index/v1`; see
+[Persistent Search Index](persistent-search-index.md).
+
 ## Future Backends
 
-The current implementation is in-memory and suitable for thousands to low tens
-of thousands of Skill records. The same `skillrouter.search/v1` result shape can
+The current implementation supports both in-memory search and a dependency-free
+persistent JSON search index. The same `skillrouter.search/v1` result shape can
 later be backed by:
 
 - SQLite FTS5 for persistent local keyword search

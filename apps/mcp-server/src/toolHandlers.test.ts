@@ -3,7 +3,9 @@ import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import {
+  buildSkillSearchIndex,
   discoverLocalSkills,
+  writeSkillSearchIndex,
   writeStaticSkillIndex,
 } from "@openskillrouter/core";
 import { describe, expect, it } from "vitest";
@@ -105,6 +107,33 @@ describe("MCP tool handlers", () => {
       expect.objectContaining({
         candidates: expect.any(Array),
       }),
+    );
+  });
+
+  it("uses a persistent search index path for recommendations", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "skillrouter-mcp-search-"));
+    const searchIndexPath = path.join(root, "search-index.json");
+    const index = await discoverLocalSkills("../../examples/mock-skills");
+    await writeSkillSearchIndex(buildSkillSearchIndex(index), searchIndexPath);
+
+    const result = await recommendSkillsTool({
+      task: "review TypeScript code changes for bugs",
+      search_index_path: searchIndexPath,
+      max_results: 2,
+      search_max_results: 3,
+    });
+
+    expect(result.searchPrefilter).toEqual(
+      expect.objectContaining({
+        schemaVersion: "skillrouter.search/v1",
+      }),
+    );
+    expect(result.recommendations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          skill: expect.objectContaining({ name: "code-review" }),
+        }),
+      ]),
     );
   });
 

@@ -97,6 +97,7 @@ export function createSkillRouterMcpServer(): McpServer {
         source_root: z.string().optional(),
         static_source: z.string().optional(),
         source_registry: z.string().optional(),
+        search_index_path: z.string().optional(),
         privacy_mode: z.enum(["strict", "balanced", "cloud"]).optional(),
         recommendation_mode: recommendationModeSchema.optional(),
         max_results: z.number().int().positive().max(50).optional(),

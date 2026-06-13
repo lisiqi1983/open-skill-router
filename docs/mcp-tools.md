@@ -50,6 +50,7 @@ Input:
   "task": "分析这个专利交底书，评估授权概率，输出 PDF 报告",
   "static_source": "public",
   "source_registry": ".skillrouter/sources.json",
+  "search_index_path": ".skillrouter/search-index.json",
   "privacy_mode": "balanced",
   "recommendation_mode": "fast_metadata",
   "max_results": 5,
@@ -80,6 +81,8 @@ Input:
 Notes:
 
 - Use one of `source_root`, `static_source`, or `index_path`.
+- `search_index_path` can be used instead of those sources when a persistent
+  `skillrouter.search-index/v1` artifact has already been built.
 - `source_root` triggers live discovery of local `SKILL.md` files.
 - `static_source` can be a configured source name, local static index
   directory, `skills.jsonl` file, or HTTP(S) static index URL.
@@ -96,6 +99,8 @@ Notes:
   returning a candidate pack to the caller's model.
 - `search_max_results` controls how many search hits are retained before
   recommendation scoring.
+- When `search_index_path` is supplied, MCP uses it as the source of
+  recommendation records and automatically runs search prefiltering.
 - `model_rerank` lets the caller pass structured model output back to
   SkillRouter. SkillRouter validates it, merges scores, and preserves
   deterministic safety gates.

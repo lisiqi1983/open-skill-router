@@ -462,3 +462,35 @@ pnpm test:recommend-search
 
 Status: implemented. The next improvement is persistent FTS/vector search
 indexes for very large local or public catalogs.
+
+## M14: Persistent Search Index
+
+Goal: avoid rebuilding search documents on every query by storing a reusable
+local search artifact for large Skill collections.
+
+Deliverables:
+
+- [x] `skillrouter.search-index/v1` schema.
+- [x] Core `buildSkillSearchIndex` API.
+- [x] Core `searchSkillIndex` API for prebuilt indexes.
+- [x] Search-index JSON read/write helpers.
+- [x] Local-index reconstruction from persistent search indexes.
+- [x] CLI `skillrouter search-index build`.
+- [x] CLI `search --search-index`.
+- [x] CLI `recommend --search-index` with automatic search prefiltering.
+- [x] MCP `recommend_skills.search_index_path`.
+- [x] API server `--search-index`.
+- [x] M14 smoke test covering build, search, and recommendation.
+
+Acceptance:
+
+```bash
+skillrouter search-index build --source public --out .skillrouter/public-search-index.json
+skillrouter search "review GitHub PR TypeScript code changes" --search-index .skillrouter/public-search-index.json --max 20
+skillrouter recommend "review GitHub PR TypeScript code changes" --search-index .skillrouter/public-search-index.json --search-max 50 --candidate-pack
+pnpm test:persistent-search
+```
+
+Status: implemented as a dependency-free persistent JSON search layer. The next
+improvement is incremental refresh and optional SQLite FTS/vector backends for
+larger local and public Skill catalogs.

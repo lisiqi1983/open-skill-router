@@ -4,9 +4,13 @@ import { profileTask } from "./taskProfile.js";
 import { tokenizeText } from "./tokenize.js";
 import type {
   IndexedSkill,
+  LocalSkillIndex,
+  SearchSkillIndexOptions,
   SearchSkillsOptions,
   SearchSkillsResult,
   SkillCatalogCard,
+  SkillSearchIndex,
+  SkillSearchIndexDocument,
   SkillSearchHit,
   TaskProfile,
 } from "./types.js";
@@ -18,6 +22,7 @@ interface SearchDocument {
   tokenCounts: Map<string, number>;
   tokenSet: Set<string>;
   tokenCount: number;
+  skillVector: Map<string, number>;
 }
 
 interface ScoredSearchDocument {
@@ -34,21 +39,66 @@ interface LexicalStats {
   tokens: Map<string, { idf: number }>;
 }
 
+type SearchFilters = Pick<
+  SearchSkillsOptions,
+  | "localOnly"
+  | "sourceTypes"
+  | "riskLevels"
+  | "domains"
+  | "intents"
+  | "environments"
+>;
+
 export function searchSkills(options: SearchSkillsOptions): SearchSkillsResult {
+  const searchIndex = buildSkillSearchIndex(options.index);
+  const { index: _index, ...searchOptions } = options;
+  return searchSkillIndex({ ...searchOptions, searchIndex });
+}
+
+export function buildSkillSearchIndex(
+  index: LocalSkillIndex,
+): SkillSearchIndex {
+  const catalogBySkillId = new Map(
+    buildSkillCatalog(index).cards.map((card) => [card.skillId, card]),
+  );
+  const documents = index.skills.map((indexedSkill) =>
+    buildSearchDocument(
+      indexedSkill,
+      catalogBySkillId.get(indexedSkill.skill.id),
+    ),
+  );
+
+  return {
+    schemaVersion: "skillrouter.search-index/v1",
+    generatedAt: new Date().toISOString(),
+    sourceRoot: index.sourceRoot,
+    skillCount: documents.length,
+    averageDocumentLength: averageDocumentLength(documents),
+    documentFrequencies: mapToRecord(computeDocumentFrequencies(documents)),
+    documents: documents.map(toSkillSearchIndexDocument),
+  };
+}
+
+export function localIndexFromSkillSearchIndex(
+  searchIndex: SkillSearchIndex,
+): LocalSkillIndex {
+  return {
+    schemaVersion: "skillrouter.local-index/v1",
+    generatedAt: searchIndex.generatedAt,
+    sourceRoot: searchIndex.sourceRoot,
+    skills: searchIndex.documents.map((document) => document.indexedSkill),
+  };
+}
+
+export function searchSkillIndex(
+  options: SearchSkillIndexOptions,
+): SearchSkillsResult {
   const task = profileTask(options.query, {
     privacyMode: options.privacyMode,
   });
-  const catalogBySkillId = new Map(
-    buildSkillCatalog(options.index).cards.map((card) => [card.skillId, card]),
-  );
   const queryTokens = tokenizeText(options.query);
-  const documents = options.index.skills
-    .map((indexedSkill) =>
-      buildSearchDocument(
-        indexedSkill,
-        catalogBySkillId.get(indexedSkill.skill.id),
-      ),
-    )
+  const documents = options.searchIndex.documents
+    .map(fromSkillSearchIndexDocument)
     .filter((document) => matchesFilters(document.catalogCard, options));
   const lexicalStats = computeLexicalStats(documents, queryTokens);
   const scored = documents.map((document) =>
@@ -71,7 +121,7 @@ export function searchSkills(options: SearchSkillsOptions): SearchSkillsResult {
     generatedAt: new Date().toISOString(),
     query: options.query,
     task,
-    totalSkillCount: options.index.skills.length,
+    totalSkillCount: options.searchIndex.skillCount,
     filteredSkillCount: documents.length,
     results,
   };
@@ -98,12 +148,42 @@ function buildSearchDocument(
       (sum, count) => sum + count,
       0,
     ),
+    skillVector: buildSkillVector(catalogCard, indexedSkill),
+  };
+}
+
+function toSkillSearchIndexDocument(
+  document: SearchDocument,
+): SkillSearchIndexDocument {
+  return {
+    indexedSkill: document.indexedSkill,
+    catalogCard: document.catalogCard,
+    text: document.text,
+    tokenCounts: mapToRecord(document.tokenCounts),
+    tokenCount: document.tokenCount,
+    skillVector: mapToRecord(document.skillVector),
+  };
+}
+
+function fromSkillSearchIndexDocument(
+  document: SkillSearchIndexDocument,
+): SearchDocument {
+  const tokenCounts = recordToMap(document.tokenCounts);
+
+  return {
+    indexedSkill: document.indexedSkill,
+    catalogCard: document.catalogCard,
+    text: document.text,
+    tokenCounts,
+    tokenSet: new Set(tokenCounts.keys()),
+    tokenCount: document.tokenCount,
+    skillVector: recordToMap(document.skillVector),
   };
 }
 
 function matchesFilters(
   catalogCard: SkillCatalogCard,
-  options: SearchSkillsOptions,
+  options: SearchFilters,
 ): boolean {
   if (options.localOnly && catalogCard.sourceType !== "local") return false;
   if (
@@ -166,6 +246,26 @@ function computeLexicalStats(
   return { averageDocumentLength, tokens };
 }
 
+function averageDocumentLength(documents: SearchDocument[]): number {
+  if (documents.length === 0) return 0;
+  return (
+    documents.reduce((sum, document) => sum + document.tokenCount, 0) /
+    documents.length
+  );
+}
+
+function computeDocumentFrequencies(
+  documents: SearchDocument[],
+): Map<string, number> {
+  const frequencies = new Map<string, number>();
+  for (const document of documents) {
+    for (const token of document.tokenSet) {
+      frequencies.set(token, (frequencies.get(token) ?? 0) + 1);
+    }
+  }
+  return frequencies;
+}
+
 function scoreDocument(
   document: SearchDocument,
   task: TaskProfile,
@@ -211,11 +311,7 @@ function scoreSemantic(
   queryTokens: string[],
 ): number {
   const queryVector = buildTaskVector(task, queryTokens);
-  const skillVector = buildSkillVector(
-    document.catalogCard,
-    document.indexedSkill,
-  );
-  return Math.round(weightedCosine(queryVector, skillVector) * 100);
+  return Math.round(weightedCosine(queryVector, document.skillVector) * 100);
 }
 
 function scoreCatalog(card: SkillCatalogCard, task: TaskProfile): number {
@@ -526,6 +622,18 @@ function countTokens(text: string): Map<string, number> {
 
 function addCount(counts: Map<string, number>, token: string): void {
   counts.set(token, (counts.get(token) ?? 0) + 1);
+}
+
+function mapToRecord(map: Map<string, number>): Record<string, number> {
+  return Object.fromEntries(
+    Array.from(map.entries()).sort(([left], [right]) =>
+      left.localeCompare(right),
+    ),
+  );
+}
+
+function recordToMap(record: Record<string, number>): Map<string, number> {
+  return new Map(Object.entries(record));
 }
 
 function cjkNgrams(text: string): string[] {

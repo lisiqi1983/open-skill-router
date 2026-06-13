@@ -11,6 +11,12 @@ pnpm build
 node apps/api/dist/index.js serve --source public/open-skill-router/index --port 8765
 ```
 
+With a prebuilt persistent search index:
+
+```bash
+node apps/api/dist/index.js serve --search-index .skillrouter/search-index.json --port 8765
+```
+
 CLI client:
 
 ```bash
@@ -61,7 +67,9 @@ The optional `scoring` object uses the same schema as
 [Recommendation Scoring](scoring.md).
 Set `search_prefilter` to true when the API should first retrieve a bounded
 candidate pool from large static sources before deterministic recommendation.
-`search_max_results` controls the prefilter size.
+`search_max_results` controls the prefilter size. If the API server was started
+with `--search-index`, the server-side persistent index is used for this
+prefilter; clients cannot provide arbitrary server file paths in request bodies.
 
 ### `GET /v1/sources/health?source=public`
 

@@ -5,6 +5,7 @@ export * from "./modelRerank.js";
 export * from "./recommend.js";
 export * from "./scoring.js";
 export * from "./searchSkills.js";
+export * from "./skillSearchIndex.js";
 export * from "./skillCatalog.js";
 export * from "./skillCatalogAnalysis.js";
 export * from "./sourceManifest.js";

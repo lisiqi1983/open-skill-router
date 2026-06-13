@@ -24,6 +24,14 @@ skillrouter search "generate product launch slides" --index .skillrouter/index.j
 skillrouter search "local PDF report writing" --local-only --environment local_filesystem --json
 ```
 
+Build and reuse a persistent search index for large Skill collections:
+
+```bash
+skillrouter search-index build --source public --out .skillrouter/public-search-index.json
+skillrouter search "review GitHub PR TypeScript code changes" --search-index .skillrouter/public-search-index.json --max 20
+skillrouter recommend "review GitHub PR TypeScript code changes" --search-index .skillrouter/public-search-index.json --search-max 50 --candidate-pack
+```
+
 Use `--candidate-pack --json` when the calling model should compare bounded
 candidate skill documents. After the model produces JSON matching the candidate
 pack's `rerankContract.outputSchema`, pass it back with `--model-rerank`.

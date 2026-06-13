@@ -77,3 +77,6 @@ jobs:
 
       - name: Search-prefiltered recommendation smoke
         run: pnpm test:recommend-search
+
+      - name: Persistent search index smoke
+        run: pnpm test:persistent-search

@@ -5,7 +5,7 @@ import {
   resolveRecommendationScoringConfig,
   scoreRecommendationBreakdown,
 } from "./scoring.js";
-import { searchSkills } from "./searchSkills.js";
+import { searchSkillIndex, searchSkills } from "./searchSkills.js";
 import { buildSkillCatalog } from "./skillCatalog.js";
 import { profileTask } from "./taskProfile.js";
 import { tokenizeText } from "./tokenize.js";
@@ -24,20 +24,7 @@ export function recommendSkills(
   const task = profileTask(options.task, { privacyMode: options.privacyMode });
   const scoring = resolveRecommendationScoringConfig(options.scoring);
   const searchPrefilter = options.searchPrefilter
-    ? searchSkills({
-        index: options.index,
-        query: options.task,
-        maxResults:
-          options.searchPrefilter.maxResults ??
-          defaultSearchPrefilterMax(options.maxResults),
-        privacyMode: options.privacyMode,
-        sourceTypes: options.searchPrefilter.sourceTypes,
-        riskLevels: options.searchPrefilter.riskLevels,
-        domains: options.searchPrefilter.domains,
-        intents: options.searchPrefilter.intents,
-        environments: options.searchPrefilter.environments,
-        localOnly: options.searchPrefilter.localOnly,
-      })
+    ? searchWithPrefilter(options)
     : undefined;
   const index = searchPrefilter
     ? filterIndexBySearchResults(options.index, searchPrefilter)
@@ -88,6 +75,34 @@ export function recommendSkills(
     modelRerank: modelRerankResult?.modelRerank,
     searchPrefilter,
   };
+}
+
+function searchWithPrefilter(
+  options: RecommendSkillsOptions,
+): NonNullable<RecommendSkillsResult["searchPrefilter"]> {
+  const searchOptions = {
+    query: options.task,
+    maxResults:
+      options.searchPrefilter?.maxResults ??
+      defaultSearchPrefilterMax(options.maxResults),
+    privacyMode: options.privacyMode,
+    sourceTypes: options.searchPrefilter?.sourceTypes,
+    riskLevels: options.searchPrefilter?.riskLevels,
+    domains: options.searchPrefilter?.domains,
+    intents: options.searchPrefilter?.intents,
+    environments: options.searchPrefilter?.environments,
+    localOnly: options.searchPrefilter?.localOnly,
+  };
+
+  return options.searchPrefilter?.searchIndex
+    ? searchSkillIndex({
+        ...searchOptions,
+        searchIndex: options.searchPrefilter.searchIndex,
+      })
+    : searchSkills({
+        ...searchOptions,
+        index: options.index,
+      });
 }
 
 function defaultSearchPrefilterMax(maxResults?: number): number {

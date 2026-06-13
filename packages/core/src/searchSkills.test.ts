@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { discoverLocalSkills } from "./discoverLocalSkills.js";
-import { searchSkills } from "./searchSkills.js";
+import {
+  buildSkillSearchIndex,
+  localIndexFromSkillSearchIndex,
+  searchSkillIndex,
+  searchSkills,
+} from "./searchSkills.js";
 
 describe("searchSkills", () => {
   it("ranks matching skills across lexical and catalog dimensions", async () => {
@@ -39,5 +44,28 @@ describe("searchSkills", () => {
     expect(result.filteredSkillCount).toBe(1);
     expect(result.results).toHaveLength(1);
     expect(result.results[0]?.skill.name).toBe("presentation-deck");
+  });
+
+  it("can search a persistent prebuilt search index", async () => {
+    const index = await discoverLocalSkills("../../examples/mock-skills", {
+      now: new Date("2026-06-13T00:00:00.000Z"),
+    });
+    const searchIndex = buildSkillSearchIndex(index);
+
+    const result = searchSkillIndex({
+      searchIndex,
+      query:
+        "review GitHub PR TypeScript code changes for bugs and missing tests",
+      maxResults: 3,
+    });
+
+    expect(searchIndex.schemaVersion).toBe("skillrouter.search-index/v1");
+    expect(searchIndex.skillCount).toBe(3);
+    expect(searchIndex.documents[0]?.tokenCount).toBeGreaterThan(0);
+    expect(Object.keys(searchIndex.documentFrequencies).length).toBeGreaterThan(
+      0,
+    );
+    expect(result.results[0]?.skill.name).toBe("code-review");
+    expect(localIndexFromSkillSearchIndex(searchIndex).skills).toHaveLength(3);
   });
 });

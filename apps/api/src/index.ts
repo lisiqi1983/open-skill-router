@@ -25,6 +25,10 @@ program
   .option("--port <port>", "Port to bind.", parsePort, 8765)
   .option("--source <name-or-url>", "Default static source name, path, or URL.")
   .option("--index <path>", "Fallback local index path.")
+  .option(
+    "--search-index <path>",
+    "Default persistent search index path for search-prefiltered recommendations.",
+  )
   .option("--source-registry <path>", "Source registry path.")
   .option("--feedback-dir <path>", "Feedback JSONL directory.")
   .option("--scoring <path>", "Default scoring config JSON path.")
@@ -38,6 +42,7 @@ program
       port: number;
       source?: string;
       index?: string;
+      searchIndex?: string;
       sourceRegistry?: string;
       feedbackDir?: string;
       scoring?: string;
@@ -49,6 +54,7 @@ program
       const server = createSkillRouterApiServer({
         defaultSource: options.source,
         indexPath: options.index,
+        searchIndexPath: options.searchIndex,
         sourceRegistry: options.sourceRegistry,
         feedbackDir: options.feedbackDir,
         defaultScoring,

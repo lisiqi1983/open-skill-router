@@ -15,7 +15,9 @@ import {
   defaultProjectIndexPath,
   defaultSourceRegistryPath,
   discoverLocalSkills,
+  localIndexFromSkillSearchIndex,
   readLocalSkillIndex,
+  readSkillSearchIndex,
   readStaticSkillIndex,
   resolveSourceUrls,
   recommendSkills,
@@ -30,6 +32,7 @@ export interface RecommendSkillsToolInput {
   source_root?: string;
   static_source?: string;
   source_registry?: string;
+  search_index_path?: string;
   privacy_mode?: "strict" | "balanced" | "cloud";
   recommendation_mode?: RecommendationMode;
   max_results?: number;
@@ -85,7 +88,13 @@ export interface RecordFeedbackToolInput {
 export async function recommendSkillsTool(
   input: RecommendSkillsToolInput,
 ): Promise<Record<string, unknown>> {
-  const index = await readRecommendationIndex(input);
+  const searchIndex = input.search_index_path
+    ? await readSkillSearchIndex(input.search_index_path)
+    : undefined;
+  const index = searchIndex
+    ? localIndexFromSkillSearchIndex(searchIndex)
+    : await readRecommendationIndex(input);
+  const useSearchPrefilter = input.search_prefilter || Boolean(searchIndex);
   const mode =
     input.include_candidate_pack && !input.recommendation_mode
       ? "full_skill_rerank"
@@ -99,9 +108,10 @@ export async function recommendSkillsTool(
     privacyMode: input.privacy_mode,
     modelRerank: input.model_rerank,
     scoring: input.scoring,
-    searchPrefilter: input.search_prefilter
+    searchPrefilter: useSearchPrefilter
       ? {
           maxResults: input.search_max_results,
+          searchIndex,
         }
       : undefined,
   }) as unknown as Record<string, unknown>;

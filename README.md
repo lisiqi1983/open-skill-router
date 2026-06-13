@@ -77,6 +77,8 @@ skillrouter source health public
 skillrouter recommend "帮我生成一份产品发布 PPT" --source public
 skillrouter recommend "review GitHub PR TypeScript code changes" --source public --search-prefilter --search-max 50
 skillrouter search "review GitHub PR TypeScript code changes" --source public --max 20
+skillrouter search-index build --source public --out .skillrouter/public-search-index.json
+skillrouter recommend "review GitHub PR TypeScript code changes" --search-index .skillrouter/public-search-index.json --search-max 50
 skillrouter catalog build --source public --json
 skillrouter catalog analyze --source public --json
 skillrouter source add https://lisiqi1983.github.io/open-skill-router/open-skill-router/public-seed/index/ public-seed
@@ -114,7 +116,9 @@ request. Real Skill research now has a local-only curation track, a public seed
 manifest, research-mode invalid Skill skipping for noisy local inventories, and
 a large-scale search path that performs lexical, semantic, catalog, quality, and
 safety scoring before model rerank. Recommendation can now use search as a
-prefiltered candidate pool for large Skill indexes.
+prefiltered candidate pool for large Skill indexes, and persistent
+`skillrouter.search-index/v1` artifacts can precompute retrieval documents for
+repeated local, MCP, and API search-prefiltered recommendation.
 
 Try it locally:
 
@@ -135,6 +139,8 @@ node apps/cli/dist/index.js source health public
 node apps/cli/dist/index.js recommend "帮我生成一份产品发布 PPT" --source public
 node apps/cli/dist/index.js recommend "review GitHub PR TypeScript code changes" --source public --search-prefilter --search-max 50
 node apps/cli/dist/index.js search "review GitHub PR TypeScript code changes" --source public --max 20
+node apps/cli/dist/index.js search-index build --source public --out .skillrouter/public-search-index.json
+node apps/cli/dist/index.js recommend "review GitHub PR TypeScript code changes" --search-index .skillrouter/public-search-index.json --search-max 50
 node apps/cli/dist/index.js catalog build --source public --json
 node apps/cli/dist/index.js catalog analyze --source public --json
 node apps/cli/dist/index.js index-source skillrouter.public-seed.yaml --out public/open-skill-router/public-seed/index
@@ -177,6 +183,7 @@ pnpm test:scoring
 pnpm test:analysis
 pnpm test:search
 pnpm test:recommend-search
+pnpm test:persistent-search
 pnpm build
 ```
 
@@ -195,5 +202,6 @@ See:
 - [Recommendation Scoring](docs/scoring.md)
 - [Model-Assisted Recommendation](docs/model-assisted-recommendation.md)
 - [Large-Scale Skill Search](docs/large-scale-search.md)
+- [Persistent Search Index](docs/persistent-search-index.md)
 - [GitHub Deployment and Mirrors](docs/github-deployment-and-mirrors.md)
 - [Public Skill Seed](docs/public-skill-seed.md)

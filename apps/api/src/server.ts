@@ -9,7 +9,9 @@ import {
   checkStaticSourceHealth,
   defaultProjectIndexPath,
   defaultSourceRegistryPath,
+  localIndexFromSkillSearchIndex,
   readLocalSkillIndex,
+  readSkillSearchIndex,
   readStaticSkillIndex,
   recommendSkills,
   resolveSourceRegistryEntry,
@@ -24,6 +26,7 @@ import {
 
 export interface SkillRouterApiOptions {
   indexPath?: string;
+  searchIndexPath?: string;
   defaultSource?: string;
   sourceRegistry?: string;
   feedbackDir?: string;
@@ -148,7 +151,10 @@ async function recommendViaApi(
     input.include_candidate_pack && !input.recommendation_mode
       ? "full_skill_rerank"
       : (input.recommendation_mode ?? "fast_metadata");
-  const index = await readApiIndex(input, options);
+  const searchIndex = await readApiSearchIndex(input, options);
+  const index = searchIndex
+    ? localIndexFromSkillSearchIndex(searchIndex)
+    : await readApiIndex(input, options);
 
   return recommendSkills({
     index,
@@ -161,9 +167,18 @@ async function recommendViaApi(
     searchPrefilter: input.search_prefilter
       ? {
           maxResults: input.search_max_results,
+          searchIndex,
         }
       : undefined,
   });
+}
+
+async function readApiSearchIndex(
+  input: RecommendApiRequest,
+  options: SkillRouterApiOptions,
+) {
+  if (input.source || !options.searchIndexPath) return undefined;
+  return readSkillSearchIndex(options.searchIndexPath);
 }
 
 async function readApiIndex(

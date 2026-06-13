@@ -2,7 +2,9 @@ import { mkdtemp, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import {
+  buildSkillSearchIndex,
   discoverLocalSkills,
+  writeSkillSearchIndex,
   writeStaticSkillIndex,
 } from "@openskillrouter/core";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -15,6 +17,7 @@ describe("Open Skill Router API", () => {
   beforeEach(async () => {
     const root = await mkdtemp(path.join(tmpdir(), "skillrouter-api-"));
     const source = path.join(root, "index");
+    const searchIndexPath = path.join(root, "search-index.json");
     const feedbackDir = path.join(root, "feedback");
     const index = await discoverLocalSkills("../../examples/mock-skills", {
       now: new Date("2026-06-10T00:00:00.000Z"),
@@ -23,9 +26,11 @@ describe("Open Skill Router API", () => {
       name: "api-test",
       now: new Date("2026-06-10T00:00:00.000Z"),
     });
+    await writeSkillSearchIndex(buildSkillSearchIndex(index), searchIndexPath);
 
     server = createSkillRouterApiServer({
       defaultSource: source,
+      searchIndexPath,
       feedbackDir,
       now: () => new Date("2026-06-10T00:00:00.000Z"),
     });
