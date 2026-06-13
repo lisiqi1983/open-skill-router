@@ -425,3 +425,44 @@ export interface RecommendSkillsResult {
   candidatePack?: CandidatePack;
   modelRerank?: ModelRerankApplication;
 }
+
+export interface SearchSkillsOptions {
+  index: LocalSkillIndex;
+  query: string;
+  maxResults?: number;
+  privacyMode?: TaskProfile["privacyMode"];
+  sourceTypes?: SkillReference["sourceType"][];
+  riskLevels?: RiskLevel[];
+  domains?: string[];
+  intents?: string[];
+  environments?: string[];
+  localOnly?: boolean;
+}
+
+export interface SearchSkillsResult {
+  schemaVersion: "skillrouter.search/v1";
+  generatedAt: string;
+  query: string;
+  task: TaskProfile;
+  totalSkillCount: number;
+  filteredSkillCount: number;
+  results: SkillSearchHit[];
+}
+
+export interface SkillSearchHit {
+  skill: SkillReference;
+  score: number;
+  rank: number;
+  matchedKeywords: string[];
+  matchedDimensions: string[];
+  reasons: string[];
+  scoreBreakdown: SkillSearchScoreBreakdown;
+}
+
+export interface SkillSearchScoreBreakdown {
+  lexical: number;
+  semantic: number;
+  catalog: number;
+  quality: number;
+  safety: number;
+}

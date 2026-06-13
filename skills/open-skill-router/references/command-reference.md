@@ -15,6 +15,14 @@ skillrouter recommend "帮我生成一份产品发布 PPT" --model-rerank rerank
 skillrouter recommend "请审查 GitHub PR 中的 TypeScript 代码变更" --scoring scoring.json --json
 ```
 
+Search large local or remote Skill indexes before model rerank:
+
+```bash
+skillrouter search "review GitHub PR TypeScript code changes" --source public --max 20
+skillrouter search "generate product launch slides" --index .skillrouter/index.json --domain presentation --risk medium
+skillrouter search "local PDF report writing" --local-only --environment local_filesystem --json
+```
+
 Use `--candidate-pack --json` when the calling model should compare bounded
 candidate skill documents. After the model produces JSON matching the candidate
 pack's `rerankContract.outputSchema`, pass it back with `--model-rerank`.

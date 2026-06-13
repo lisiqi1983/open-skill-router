@@ -390,12 +390,12 @@ boundary between local/private research and publishable public sources.
 
 Deliverables:
 
-- [ ] Local-only research workflow for personal or machine-local Skill roots.
-- [ ] Public source curation checklist covering locator, license posture,
+- [x] Local-only research workflow for personal or machine-local Skill roots.
+- [x] Public source curation checklist covering locator, license posture,
       version strategy, risk profile, tags, and notes.
-- [ ] Public seed manifest containing only reviewable public Skill sources.
-- [ ] Catalog analysis report for the public seed manifest.
-- [ ] Documentation describing how local findings can be promoted into cleaned
+- [x] Public seed manifest containing only reviewable public Skill sources.
+- [x] Catalog analysis report for the public seed manifest.
+- [x] Documentation describing how local findings can be promoted into cleaned
       public taxonomy rules without exposing private inventories.
 
 Acceptance:
@@ -408,4 +408,32 @@ skillrouter catalog analyze --source ./public/open-skill-router/index --json
 Local/personal Skill research remains outside the public repository. Public
 manifests include only public, reviewable source locators and curated metadata.
 
-Status: planned.
+Status: implemented. The first public seed is published through GitHub Pages,
+while local research output remains under the user's SkillRouter home.
+
+## M12: Large-Scale Skill Search
+
+Goal: retrieve the best candidates from thousands of local or remote Skills
+before recommendation and model rerank.
+
+Deliverables:
+
+- [x] `skillrouter.search/v1` result schema.
+- [x] Core `searchSkills` API.
+- [x] BM25-lite lexical scoring over normalized Skill records.
+- [x] Weighted semantic dimension scoring.
+- [x] Catalog fit, quality, and safety scoring.
+- [x] Source type, risk, domain, intent, environment, and local-only filters.
+- [x] CLI `skillrouter search`.
+- [x] M12 smoke test for local and remote static sources.
+
+Acceptance:
+
+```bash
+skillrouter search "review GitHub PR TypeScript code changes" --source public --max 20
+pnpm test:search
+```
+
+Status: implemented as an in-memory retrieval layer. The next improvement is to
+make `recommend_skills` use `searchSkills` as its candidate pool and add a
+persistent FTS/vector backend for very large catalogs.

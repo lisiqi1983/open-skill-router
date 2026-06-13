@@ -21,6 +21,7 @@
     "test:multidim": "pnpm build && node scripts/smoke-m8-multidim-recommend.mjs",
     "test:scoring": "pnpm build && node scripts/smoke-m9-scoring-config.mjs",
     "test:analysis": "pnpm build && node scripts/smoke-m10-catalog-analysis.mjs",
+    "test:search": "pnpm build && node scripts/smoke-m12-search.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

@@ -71,3 +71,6 @@ jobs:
 
       - name: Catalog analysis smoke
         run: pnpm test:analysis
+
+      - name: Large-scale search smoke
+        run: pnpm test:search

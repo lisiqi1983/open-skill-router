@@ -75,6 +75,7 @@ skillrouter index-source ./skillrouter.source.yaml --out ./public/index
 skillrouter source add ./public/index public --mirror https://mirror.example.com/index/
 skillrouter source health public
 skillrouter recommend "帮我生成一份产品发布 PPT" --source public
+skillrouter search "review GitHub PR TypeScript code changes" --source public --max 20
 skillrouter catalog build --source public --json
 skillrouter catalog analyze --source public --json
 skillrouter source add https://lisiqi1983.github.io/open-skill-router/open-skill-router/public-seed/index/ public-seed
@@ -109,7 +110,9 @@ now uses catalog-aware multidimensional scoring across
 metadata, intent, domain, input/output, environment, workflow stage, quality, and
 safety signals, and these scoring weights can be configured per CLI/API/MCP
 request. Real Skill research now has a local-only curation track, a public seed
-manifest, and research-mode invalid Skill skipping for noisy local inventories.
+manifest, research-mode invalid Skill skipping for noisy local inventories, and
+a large-scale search path that performs lexical, semantic, catalog, quality, and
+safety scoring before model rerank.
 
 Try it locally:
 
@@ -128,6 +131,7 @@ node apps/cli/dist/index.js index-source skillrouter.source.yaml --out public/op
 node apps/cli/dist/index.js source add public/open-skill-router/index public --mirror https://mirror.example.com/open-skill-router/index/
 node apps/cli/dist/index.js source health public
 node apps/cli/dist/index.js recommend "帮我生成一份产品发布 PPT" --source public
+node apps/cli/dist/index.js search "review GitHub PR TypeScript code changes" --source public --max 20
 node apps/cli/dist/index.js catalog build --source public --json
 node apps/cli/dist/index.js catalog analyze --source public --json
 node apps/cli/dist/index.js index-source skillrouter.public-seed.yaml --out public/open-skill-router/public-seed/index
@@ -168,6 +172,7 @@ pnpm test:catalog
 pnpm test:multidim
 pnpm test:scoring
 pnpm test:analysis
+pnpm test:search
 pnpm build
 ```
 
@@ -185,5 +190,6 @@ See:
 - [Catalog Analysis](docs/catalog-analysis.md)
 - [Recommendation Scoring](docs/scoring.md)
 - [Model-Assisted Recommendation](docs/model-assisted-recommendation.md)
+- [Large-Scale Skill Search](docs/large-scale-search.md)
 - [GitHub Deployment and Mirrors](docs/github-deployment-and-mirrors.md)
 - [Public Skill Seed](docs/public-skill-seed.md)

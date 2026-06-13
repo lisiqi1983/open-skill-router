@@ -29,14 +29,20 @@ import {
   removeSourceRegistryEntry,
   resolveSourceRegistryEntry,
   resolveSourceUrls,
+  searchSkills,
   writeLocalSkillIndex,
   renderSkillCatalogAnalysisMarkdown,
   type SkillCatalog,
   type SkillCatalogAnalysis,
+  type SkillSearchHit,
+  type SearchSkillsOptions,
   type ModelRerankOutput,
   type RecommendationMode,
   type RecommendationScoringConfig,
 } from "@openskillrouter/core";
+
+type CliRiskLevel = NonNullable<SearchSkillsOptions["riskLevels"]>[number];
+type CliSourceType = NonNullable<SearchSkillsOptions["sourceTypes"]>[number];
 import { buildStaticIndexFromManifest } from "@openskillrouter/indexer";
 
 const program = new Command();
@@ -261,6 +267,84 @@ program
           }
         }
       }
+    },
+  );
+
+program
+  .command("search")
+  .description(
+    "Search large local or remote Skill indexes before model reranking.",
+  )
+  .argument("<query>", "Natural language query.")
+  .option("-i, --index <path>", "Local index path.", defaultProjectIndexPath())
+  .option(
+    "--source <name-or-url>",
+    "Static source name, directory, JSONL file, or URL.",
+  )
+  .option(
+    "--source-registry <path>",
+    "Source registry path.",
+    defaultSourceRegistryPath(),
+  )
+  .option("-m, --max <count>", "Maximum search hits.", parseInteger, 20)
+  .option(
+    "--source-type <types>",
+    "Comma-separated source types: github, local, mcp_registry, agent_skills_registry, custom.",
+    parseSourceTypes,
+  )
+  .option(
+    "--risk <levels>",
+    "Comma-separated risk levels: low, medium, high, unknown.",
+    parseRiskLevels,
+  )
+  .option("--domain <domains>", "Comma-separated catalog domains.", parseList)
+  .option("--intent <intents>", "Comma-separated catalog intents.", parseList)
+  .option(
+    "--environment <environments>",
+    "Comma-separated catalog environments.",
+    parseList,
+  )
+  .option("--local-only", "Only search local Skill sources.")
+  .option("--json", "Print machine-readable JSON.")
+  .action(
+    async (
+      query: string,
+      options: {
+        index: string;
+        source?: string;
+        sourceRegistry: string;
+        max: number;
+        sourceType?: CliSourceType[];
+        risk?: CliRiskLevel[];
+        domain?: string[];
+        intent?: string[];
+        environment?: string[];
+        localOnly?: boolean;
+        json?: boolean;
+      },
+    ) => {
+      const result = searchSkills({
+        index: await readRecommendationIndex({
+          indexPath: options.index,
+          source: options.source,
+          sourceRegistry: options.sourceRegistry,
+        }),
+        query,
+        maxResults: options.max,
+        sourceTypes: options.sourceType,
+        riskLevels: options.risk,
+        domains: options.domain,
+        intents: options.intent,
+        environments: options.environment,
+        localOnly: options.localOnly,
+      });
+
+      if (options.json) {
+        console.log(JSON.stringify(result, null, 2));
+        return;
+      }
+
+      printSearchResults(result);
     },
   );
 
@@ -845,6 +929,50 @@ function printRecommendations(
   }
 }
 
+function printSearchResults(result: ReturnType<typeof searchSkills>): void {
+  console.log(`Query: ${result.query}`);
+  console.log(
+    `Searched ${result.filteredSkillCount}/${result.totalSkillCount} skill(s).`,
+  );
+  console.log("");
+
+  if (result.results.length === 0) {
+    console.log("No matching skills found. Try broadening filters.");
+    return;
+  }
+
+  console.log(`Found ${result.results.length} search hit(s):`);
+  console.log("");
+  for (const hit of result.results) {
+    printSearchHit(hit);
+  }
+}
+
+function printSearchHit(hit: SkillSearchHit): void {
+  console.log(`[${hit.rank}] ${hit.skill.displayName ?? hit.skill.name}`);
+  console.log(`    Score: ${hit.score} / 100`);
+  console.log(`    Source: ${hit.skill.locator}`);
+  console.log(`    Type: ${hit.skill.sourceType}`);
+  console.log(`    Risk: ${hit.skill.riskLevel}`);
+  if (hit.matchedKeywords.length > 0) {
+    console.log(`    Keywords: ${hit.matchedKeywords.slice(0, 10).join(", ")}`);
+  }
+  if (hit.matchedDimensions.length > 0) {
+    console.log(
+      `    Dimensions: ${hit.matchedDimensions.slice(0, 10).join(", ")}`,
+    );
+  }
+  console.log(
+    `    Breakdown: lexical=${hit.scoreBreakdown.lexical}, semantic=${hit.scoreBreakdown.semantic}, catalog=${hit.scoreBreakdown.catalog}, safety=${hit.scoreBreakdown.safety}`,
+  );
+  console.log("");
+  console.log("    Reasons:");
+  for (const reason of hit.reasons) {
+    console.log(`    - ${reason}`);
+  }
+  console.log("");
+}
+
 function printInstallPlan(plan: InstallPlan): void {
   console.log(`${plan.skill.displayName ?? plan.skill.name}`);
   console.log(`  Locator: ${plan.source.locator}`);
@@ -896,6 +1024,44 @@ function parseInteger(value: string): number {
     throw new Error(`Expected a positive integer, received "${value}".`);
   }
   return parsed;
+}
+
+function parseList(value: string): string[] {
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function parseRiskLevels(value: string): CliRiskLevel[] {
+  const levels = parseList(value);
+  for (const level of levels) {
+    if (
+      level !== "low" &&
+      level !== "medium" &&
+      level !== "high" &&
+      level !== "unknown"
+    ) {
+      throw new Error(`Unknown risk level "${level}".`);
+    }
+  }
+  return levels as CliRiskLevel[];
+}
+
+function parseSourceTypes(value: string): CliSourceType[] {
+  const sourceTypes = parseList(value);
+  for (const sourceType of sourceTypes) {
+    if (
+      sourceType !== "github" &&
+      sourceType !== "local" &&
+      sourceType !== "mcp_registry" &&
+      sourceType !== "agent_skills_registry" &&
+      sourceType !== "custom"
+    ) {
+      throw new Error(`Unknown source type "${sourceType}".`);
+    }
+  }
+  return sourceTypes as CliSourceType[];
 }
 
 async function readJsonFile<T>(filePath: string): Promise<T> {
