@@ -54,6 +54,8 @@ Input:
   "recommendation_mode": "fast_metadata",
   "max_results": 5,
   "include_candidate_pack": true,
+  "search_prefilter": true,
+  "search_max_results": 50,
   "scoring": {
     "schemaVersion": "skillrouter.scoring/v1",
     "weights": {
@@ -89,6 +91,11 @@ Notes:
   index path is used.
 - `include_candidate_pack` defaults the mode to `full_skill_rerank` so the
   caller's model can compare bounded candidate documents.
+- `search_prefilter` first retrieves a bounded candidate pool using
+  deterministic search. Use it for large local or remote Skill sources before
+  returning a candidate pack to the caller's model.
+- `search_max_results` controls how many search hits are retained before
+  recommendation scoring.
 - `model_rerank` lets the caller pass structured model output back to
   SkillRouter. SkillRouter validates it, merges scores, and preserves
   deterministic safety gates.

@@ -36,6 +36,8 @@ export interface RecommendSkillsToolInput {
   include_candidate_pack?: boolean;
   model_rerank?: ModelRerankOutput;
   scoring?: RecommendationScoringConfig;
+  search_prefilter?: boolean;
+  search_max_results?: number;
 }
 
 export interface InspectSkillToolInput {
@@ -97,6 +99,11 @@ export async function recommendSkillsTool(
     privacyMode: input.privacy_mode,
     modelRerank: input.model_rerank,
     scoring: input.scoring,
+    searchPrefilter: input.search_prefilter
+      ? {
+          maxResults: input.search_max_results,
+        }
+      : undefined,
   }) as unknown as Record<string, unknown>;
 }
 

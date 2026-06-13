@@ -44,6 +44,8 @@ Input:
   "max_results": 5,
   "recommendation_mode": "fast_metadata",
   "include_candidate_pack": false,
+  "search_prefilter": true,
+  "search_max_results": 50,
   "scoring": {
     "schemaVersion": "skillrouter.scoring/v1",
     "weights": {
@@ -57,6 +59,9 @@ Input:
 Returns the same recommendation result shape as the local core runtime.
 The optional `scoring` object uses the same schema as
 [Recommendation Scoring](scoring.md).
+Set `search_prefilter` to true when the API should first retrieve a bounded
+candidate pool from large static sources before deterministic recommendation.
+`search_max_results` controls the prefilter size.
 
 ### `GET /v1/sources/health?source=public`
 

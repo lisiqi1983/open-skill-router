@@ -75,6 +75,7 @@ skillrouter index-source ./skillrouter.source.yaml --out ./public/index
 skillrouter source add ./public/index public --mirror https://mirror.example.com/index/
 skillrouter source health public
 skillrouter recommend "帮我生成一份产品发布 PPT" --source public
+skillrouter recommend "review GitHub PR TypeScript code changes" --source public --search-prefilter --search-max 50
 skillrouter search "review GitHub PR TypeScript code changes" --source public --max 20
 skillrouter catalog build --source public --json
 skillrouter catalog analyze --source public --json
@@ -112,7 +113,8 @@ safety signals, and these scoring weights can be configured per CLI/API/MCP
 request. Real Skill research now has a local-only curation track, a public seed
 manifest, research-mode invalid Skill skipping for noisy local inventories, and
 a large-scale search path that performs lexical, semantic, catalog, quality, and
-safety scoring before model rerank.
+safety scoring before model rerank. Recommendation can now use search as a
+prefiltered candidate pool for large Skill indexes.
 
 Try it locally:
 
@@ -131,6 +133,7 @@ node apps/cli/dist/index.js index-source skillrouter.source.yaml --out public/op
 node apps/cli/dist/index.js source add public/open-skill-router/index public --mirror https://mirror.example.com/open-skill-router/index/
 node apps/cli/dist/index.js source health public
 node apps/cli/dist/index.js recommend "帮我生成一份产品发布 PPT" --source public
+node apps/cli/dist/index.js recommend "review GitHub PR TypeScript code changes" --source public --search-prefilter --search-max 50
 node apps/cli/dist/index.js search "review GitHub PR TypeScript code changes" --source public --max 20
 node apps/cli/dist/index.js catalog build --source public --json
 node apps/cli/dist/index.js catalog analyze --source public --json
@@ -173,6 +176,7 @@ pnpm test:multidim
 pnpm test:scoring
 pnpm test:analysis
 pnpm test:search
+pnpm test:recommend-search
 pnpm build
 ```
 

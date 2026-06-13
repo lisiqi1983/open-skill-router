@@ -74,3 +74,6 @@ jobs:
 
       - name: Large-scale search smoke
         run: pnpm test:search
+
+      - name: Search-prefiltered recommendation smoke
+        run: pnpm test:recommend-search

@@ -193,6 +193,15 @@ program
     "--scoring <path>",
     "Apply a recommendation scoring config JSON file.",
   )
+  .option(
+    "--search-prefilter",
+    "Use search top-k as the recommendation candidate pool.",
+  )
+  .option(
+    "--search-max <count>",
+    "Maximum candidates retained by search prefilter.",
+    parseInteger,
+  )
   .action(
     async (
       task: string,
@@ -207,6 +216,8 @@ program
         candidatePack?: boolean;
         modelRerank?: string;
         scoring?: string;
+        searchPrefilter?: boolean;
+        searchMax?: number;
       },
     ) => {
       const modelRerank = options.modelRerank
@@ -229,6 +240,8 @@ program
             include_candidate_pack: options.candidatePack,
             model_rerank: modelRerank,
             scoring,
+            search_prefilter: options.searchPrefilter,
+            search_max_results: options.searchMax,
           })
         : recommendSkills({
             index: await readRecommendationIndex({
@@ -241,6 +254,11 @@ program
             mode,
             modelRerank,
             scoring,
+            searchPrefilter: options.searchPrefilter
+              ? {
+                  maxResults: options.searchMax,
+                }
+              : undefined,
           });
 
       if (options.json) {
@@ -249,6 +267,12 @@ program
       }
 
       printRecommendations(task, result.recommendations);
+      if (result.searchPrefilter) {
+        console.log("");
+        console.log(
+          `Search prefilter: ${result.searchPrefilter.results.length}/${result.searchPrefilter.filteredSkillCount} candidate(s), from ${result.searchPrefilter.totalSkillCount} skill(s).`,
+        );
+      }
       if (result.candidatePack) {
         console.log("");
         console.log(
@@ -1109,6 +1133,8 @@ async function recommendWithApi(
     include_candidate_pack?: boolean;
     model_rerank?: ModelRerankOutput;
     scoring?: RecommendationScoringConfig;
+    search_prefilter?: boolean;
+    search_max_results?: number;
   },
 ): Promise<ReturnType<typeof recommendSkills>> {
   if (body.recommendation_mode === "strict_local") {

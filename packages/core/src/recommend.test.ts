@@ -148,4 +148,55 @@ describe("recommendSkills", () => {
     expect(recommendation?.scoreBreakdown.userModelRerank).toBe(100);
     expect(recommendation?.reasons[0]).toContain("Model fit:");
   });
+
+  it("can use search prefilter as the recommendation candidate pool", async () => {
+    const index = await discoverLocalSkills("../../examples/mock-skills", {
+      now: new Date("2026-06-13T00:00:00.000Z"),
+    });
+    const noiseSource = index.skills.find(
+      (indexedSkill) => indexedSkill.skill.name === "presentation-deck",
+    );
+    expect(noiseSource).toBeDefined();
+    index.skills.push(
+      ...Array.from({ length: 40 }, (_, index) => ({
+        ...noiseSource!,
+        skillFilePath: `noise-${index}/SKILL.md`,
+        rootPath: `noise-${index}`,
+        body: "Unrelated cooking recipe notes and travel itinerary planning.",
+        skill: {
+          ...noiseSource!.skill,
+          id: `local:noise-${index}`,
+          locator: `local:noise-${index}`,
+          name: `noise-${index}`,
+          displayName: `Noise ${index}`,
+          description:
+            "Unrelated cooking recipe notes and travel itinerary planning.",
+          tags: ["noise"],
+          capabilities: [],
+          intents: [],
+          inputFormats: [],
+          outputFormats: [],
+        },
+      })),
+    );
+
+    const result = recommendSkills({
+      index,
+      task: "review GitHub PR TypeScript code changes for bugs",
+      maxResults: 3,
+      mode: "full_skill_rerank",
+      searchPrefilter: {
+        maxResults: 5,
+      },
+    });
+
+    expect(result.searchPrefilter?.results.length).toBeGreaterThan(0);
+    expect(result.searchPrefilter?.results.length).toBeLessThanOrEqual(5);
+    expect(result.searchPrefilter?.results[0]?.skill.name).toBe("code-review");
+    expect(result.recommendations[0]?.skill.name).toBe("code-review");
+    expect(result.recommendations.map((item) => item.skill.name)).not.toContain(
+      "noise-0",
+    );
+    expect(result.candidatePack?.candidates.length).toBeLessThanOrEqual(3);
+  });
 });

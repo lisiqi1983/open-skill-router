@@ -68,6 +68,29 @@ describe("Open Skill Router API", () => {
     );
   });
 
+  it("can recommend through the search prefilter", async () => {
+    const result = await postJson(`${baseUrl}/v1/recommend`, {
+      task: "review TypeScript code for bugs",
+      max_results: 2,
+      search_prefilter: true,
+      search_max_results: 3,
+    });
+
+    expect(result.searchPrefilter).toEqual(
+      expect.objectContaining({
+        schemaVersion: "skillrouter.search/v1",
+        results: expect.any(Array),
+      }),
+    );
+    expect(result.recommendations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          skill: expect.objectContaining({ name: "code-review" }),
+        }),
+      ]),
+    );
+  });
+
   it("rejects strict local API recommendation mode", async () => {
     const response = await fetch(`${baseUrl}/v1/recommend`, {
       method: "POST",

@@ -22,6 +22,7 @@
     "test:scoring": "pnpm build && node scripts/smoke-m9-scoring-config.mjs",
     "test:analysis": "pnpm build && node scripts/smoke-m10-catalog-analysis.mjs",
     "test:search": "pnpm build && node scripts/smoke-m12-search.mjs",
+    "test:recommend-search": "pnpm build && node scripts/smoke-m13-search-prefilter.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

@@ -52,6 +52,17 @@ search top 50
 Do not ask a model to inspect the full Skill corpus. The model should only see a
 bounded candidate pack after deterministic search and safety filtering.
 
+M13 wires this into recommendation directly:
+
+```bash
+skillrouter recommend "review GitHub PR TypeScript code changes" --source public --search-prefilter --search-max 50 --candidate-pack
+```
+
+With `--search-prefilter`, recommendation only scores the top search hits. The
+returned result includes `searchPrefilter` so callers can inspect the retrieval
+stage that produced the candidate pool. Candidate packs are then generated only
+from the final recommendation set, not from the full corpus.
+
 ## Future Backends
 
 The current implementation is in-memory and suitable for thousands to low tens

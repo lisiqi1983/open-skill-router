@@ -5,6 +5,7 @@ import {
   resolveRecommendationScoringConfig,
   scoreRecommendationBreakdown,
 } from "./scoring.js";
+import { searchSkills } from "./searchSkills.js";
 import { buildSkillCatalog } from "./skillCatalog.js";
 import { profileTask } from "./taskProfile.js";
 import { tokenizeText } from "./tokenize.js";
@@ -22,10 +23,29 @@ export function recommendSkills(
 ): RecommendSkillsResult {
   const task = profileTask(options.task, { privacyMode: options.privacyMode });
   const scoring = resolveRecommendationScoringConfig(options.scoring);
+  const searchPrefilter = options.searchPrefilter
+    ? searchSkills({
+        index: options.index,
+        query: options.task,
+        maxResults:
+          options.searchPrefilter.maxResults ??
+          defaultSearchPrefilterMax(options.maxResults),
+        privacyMode: options.privacyMode,
+        sourceTypes: options.searchPrefilter.sourceTypes,
+        riskLevels: options.searchPrefilter.riskLevels,
+        domains: options.searchPrefilter.domains,
+        intents: options.searchPrefilter.intents,
+        environments: options.searchPrefilter.environments,
+        localOnly: options.searchPrefilter.localOnly,
+      })
+    : undefined;
+  const index = searchPrefilter
+    ? filterIndexBySearchResults(options.index, searchPrefilter)
+    : options.index;
   const catalogBySkillId = new Map(
-    buildSkillCatalog(options.index).cards.map((card) => [card.skillId, card]),
+    buildSkillCatalog(index).cards.map((card) => [card.skillId, card]),
   );
-  const scored = options.index.skills
+  const scored = index.skills
     .map((indexedSkill) =>
       scoreSkill(
         indexedSkill,
@@ -62,10 +82,28 @@ export function recommendSkills(
             mode,
             task,
             recommendations,
-            indexedSkills: options.index.skills,
+            indexedSkills: index.skills,
           })
         : undefined,
     modelRerank: modelRerankResult?.modelRerank,
+    searchPrefilter,
+  };
+}
+
+function defaultSearchPrefilterMax(maxResults?: number): number {
+  return Math.max(50, (maxResults ?? 5) * 10);
+}
+
+function filterIndexBySearchResults(
+  index: RecommendSkillsOptions["index"],
+  searchResult: NonNullable<RecommendSkillsResult["searchPrefilter"]>,
+): RecommendSkillsOptions["index"] {
+  const candidateIds = new Set(searchResult.results.map((hit) => hit.skill.id));
+  return {
+    ...index,
+    skills: index.skills.filter((indexedSkill) =>
+      candidateIds.has(indexedSkill.skill.id),
+    ),
   };
 }
 

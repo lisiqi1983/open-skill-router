@@ -78,6 +78,36 @@ describe("MCP tool handlers", () => {
     );
   });
 
+  it("uses search prefilter before returning recommendations", async () => {
+    const result = await recommendSkillsTool({
+      task: "review TypeScript code changes for bugs",
+      source_root: "../../examples/mock-skills",
+      include_candidate_pack: true,
+      max_results: 2,
+      search_prefilter: true,
+      search_max_results: 3,
+    });
+
+    expect(result.searchPrefilter).toEqual(
+      expect.objectContaining({
+        schemaVersion: "skillrouter.search/v1",
+        results: expect.any(Array),
+      }),
+    );
+    expect(result.recommendations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          skill: expect.objectContaining({ name: "code-review" }),
+        }),
+      ]),
+    );
+    expect(result.candidatePack).toEqual(
+      expect.objectContaining({
+        candidates: expect.any(Array),
+      }),
+    );
+  });
+
   it("recommends skills from a static source snapshot", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "skillrouter-mcp-static-"));
     const out = path.join(root, "index");

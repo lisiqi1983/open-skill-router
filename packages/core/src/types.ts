@@ -417,6 +417,7 @@ export interface RecommendSkillsOptions {
   privacyMode?: TaskProfile["privacyMode"];
   modelRerank?: ModelRerankOutput;
   scoring?: RecommendationScoringConfig;
+  searchPrefilter?: RecommendSearchPrefilterOptions;
 }
 
 export interface RecommendSkillsResult {
@@ -424,6 +425,17 @@ export interface RecommendSkillsResult {
   recommendations: SkillRecommendation[];
   candidatePack?: CandidatePack;
   modelRerank?: ModelRerankApplication;
+  searchPrefilter?: SearchSkillsResult;
+}
+
+export interface RecommendSearchPrefilterOptions {
+  maxResults?: number;
+  sourceTypes?: SkillReference["sourceType"][];
+  riskLevels?: RiskLevel[];
+  domains?: string[];
+  intents?: string[];
+  environments?: string[];
+  localOnly?: boolean;
 }
 
 export interface SearchSkillsOptions {

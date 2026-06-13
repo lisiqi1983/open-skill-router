@@ -437,3 +437,28 @@ pnpm test:search
 Status: implemented as an in-memory retrieval layer. The next improvement is to
 make `recommend_skills` use `searchSkills` as its candidate pool and add a
 persistent FTS/vector backend for very large catalogs.
+
+## M13: Search-Prefiltered Recommendation
+
+Goal: connect large-scale search to the recommendation and model-rerank path so
+large Skill collections do not need to be scored or shown to models in full.
+
+Deliverables:
+
+- [x] Optional `searchPrefilter` in the core recommendation API.
+- [x] CLI `recommend --search-prefilter --search-max`.
+- [x] API `search_prefilter` and `search_max_results` request fields.
+- [x] MCP `recommend_skills.search_prefilter` support.
+- [x] Candidate packs generated only from the search-prefiltered
+      recommendation set.
+- [x] Smoke test with noisy large-index candidates.
+
+Acceptance:
+
+```bash
+skillrouter recommend "review GitHub PR TypeScript code changes" --source public --search-prefilter --search-max 50 --candidate-pack
+pnpm test:recommend-search
+```
+
+Status: implemented. The next improvement is persistent FTS/vector search
+indexes for very large local or public catalogs.

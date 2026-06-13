@@ -103,6 +103,8 @@ export function createSkillRouterMcpServer(): McpServer {
         include_candidate_pack: z.boolean().optional(),
         model_rerank: modelRerankSchema.optional(),
         scoring: scoringSchema.optional(),
+        search_prefilter: z.boolean().optional(),
+        search_max_results: z.number().int().positive().max(1000).optional(),
       },
       annotations: {
         readOnlyHint: true,
