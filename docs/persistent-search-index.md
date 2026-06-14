@@ -47,21 +47,28 @@ skillrouter search-index build --source public --out .skillrouter/public-search-
 
 ```bash
 skillrouter search "review GitHub PR TypeScript code changes" --search-index .skillrouter/search-index.json --max 20
+skillrouter search "review GitHub PR TypeScript code changes" --source public --max 20
 ```
 
 The returned search result remains `skillrouter.search/v1`, the same shape used
-by in-memory search.
+by in-memory search. When `--source` points to a static source that publishes
+`search-index.json`, the CLI automatically reads that artifact instead of
+building search documents from `skills.jsonl`.
 
 ## Recommend
 
 ```bash
 skillrouter recommend "review GitHub PR TypeScript code changes" --search-index .skillrouter/search-index.json --search-max 50 --candidate-pack
+skillrouter recommend "review GitHub PR TypeScript code changes" --source public --search-max 50 --candidate-pack
 ```
 
 Passing `--search-index` to `recommend` automatically enables search prefiltering
 for the local CLI path. The persistent index is also sufficient to reconstruct
 the local recommendation index because it stores bounded normalized
-`IndexedSkill` records.
+`IndexedSkill` records. Static sources published by M16 include the same
+artifact, so `recommend --source public` auto-enables the prefilter when
+`search-index.json` is available and falls back to full static-source scoring
+for older snapshots.
 
 ## Freshness
 
@@ -124,6 +131,7 @@ Then clients can request search-prefiltered recommendation normally:
 
 Run `search-index status` or `search-index build --if-stale` after the source
 local index or static source snapshot changes. Use `--incremental` when the
-existing output index is large and most Skill documents are unchanged. Mirrors
-may distribute search indexes beside static index snapshots in later milestones,
-but M15 keeps them as local artifacts.
+existing output index is large and most Skill documents are unchanged. Public
+static snapshots now distribute `search-index.json` and
+`search-index.json.sha256` beside `skills.jsonl`, so mirrors should sync both
+the full snapshot and the prebuilt retrieval artifact.

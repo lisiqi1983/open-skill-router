@@ -24,13 +24,20 @@ export async function readSkillSearchIndex(
   indexPath: string,
 ): Promise<SkillSearchIndex> {
   const content = await fs.readFile(indexPath, "utf8");
+  return parseSkillSearchIndex(content, indexPath);
+}
+
+export function parseSkillSearchIndex(
+  content: string,
+  source: string,
+): SkillSearchIndex {
   const parsed = JSON.parse(content) as SkillSearchIndex;
 
   if (
     parsed.schemaVersion !== "skillrouter.search-index/v1" ||
     !Array.isArray(parsed.documents)
   ) {
-    throw new Error(`Unsupported or invalid Skill search index: ${indexPath}`);
+    throw new Error(`Unsupported or invalid Skill search index: ${source}`);
   }
 
   return parsed;

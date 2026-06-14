@@ -521,6 +521,40 @@ skillrouter search-index build --source public --out .skillrouter/public-search-
 pnpm test:search-refresh
 ```
 
-Status: implemented. The next improvement is distributing search-index artifacts
-beside static snapshots, then optionally replacing the JSON backend with SQLite
-FTS/vector shards for very large public catalogs.
+Status: implemented. M16 distributes search-index artifacts beside static
+snapshots. The next improvement is optionally replacing the JSON backend with
+SQLite FTS/vector shards for very large public catalogs.
+
+## M16: Static Source Search Index Artifacts
+
+Goal: make public and mirrored static sources fast to search immediately, without
+requiring every user to build a local persistent search index first.
+
+Deliverables:
+
+- [x] `index-source` writes `search-index.json` beside `skills.jsonl`.
+- [x] `index-source` writes `search-index.json.sha256`.
+- [x] Static manifest records `searchIndexPath`, `searchIndexChecksumPath`, and
+      `searchIndexSha256`.
+- [x] Static source health compares search-index checksums across mirrors.
+- [x] CLI `search --source` automatically uses a static source search artifact
+      when present.
+- [x] CLI `recommend --source` automatically uses the static source search
+      artifact as its prefilter when present.
+- [x] Release bundles, GitHub Release assets, Pages snapshots, and mirror docs
+      include the search-index files.
+- [x] M16 smoke test proves `search` and `recommend` can run from
+      `search-index.json` without reading `skills.jsonl`.
+
+Acceptance:
+
+```bash
+skillrouter index-source ./skillrouter.source.yaml --out ./public/open-skill-router/index
+skillrouter search "review GitHub PR TypeScript code changes" --source ./public/open-skill-router/index --max 20
+skillrouter recommend "review GitHub PR TypeScript code changes" --source ./public/open-skill-router/index --search-max 50
+pnpm test:static-search-index
+```
+
+Status: implemented. Static sources now distribute both full normalized Skill
+records and prebuilt retrieval documents. Older snapshots remain compatible
+through the `skills.jsonl` fallback path.

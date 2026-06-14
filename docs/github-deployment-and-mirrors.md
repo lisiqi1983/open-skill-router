@@ -92,9 +92,13 @@ Static index files:
 public/open-skill-router/index/index.json
 public/open-skill-router/index/skills.jsonl
 public/open-skill-router/index/skills.jsonl.sha256
+public/open-skill-router/index/search-index.json
+public/open-skill-router/index/search-index.json.sha256
 public/open-skill-router/public-seed/index/index.json
 public/open-skill-router/public-seed/index/skills.jsonl
 public/open-skill-router/public-seed/index/skills.jsonl.sha256
+public/open-skill-router/public-seed/index/search-index.json
+public/open-skill-router/public-seed/index/search-index.json.sha256
 ```
 
 The M4 workflow `.github/workflows/publish-index.yml` builds this directory from
@@ -110,6 +114,8 @@ dist/release/checksums.sha256
 dist/release/public/open-skill-router/index/index.json
 dist/release/public/open-skill-router/index/skills.jsonl
 dist/release/public/open-skill-router/index/skills.jsonl.sha256
+dist/release/public/open-skill-router/index/search-index.json
+dist/release/public/open-skill-router/index/search-index.json.sha256
 ```
 
 The tag/manual `release.yml` workflow uploads the archive, manifest, checksums,
@@ -134,9 +140,9 @@ skillrouter source health public
 skillrouter recommend "帮我生成一份产品发布 PPT" --source public
 ```
 
-Mirror hosts should serve the same three files with identical relative paths.
-`skills.jsonl.sha256` allows clients and users to compare mirrors against the
-canonical snapshot.
+Mirror hosts should serve the same five files with identical relative paths.
+`skills.jsonl.sha256` and `search-index.json.sha256` allow clients and users to
+compare mirrors against the canonical snapshot.
 
 ## M4.5 Failover and Health
 
@@ -157,8 +163,8 @@ the cached snapshot for the same URL.
 
 `skillrouter source health public` checks each configured URL, validates the
 manifest checksum, and reports whether mirror hashes match the primary. A mirror
-with a different `skillsSha256` should be treated as stale or divergent until it
-is refreshed.
+with a different `skillsSha256` or `searchIndexSha256` should be treated as
+stale or divergent until it is refreshed.
 
 ## M6 Release and Mirror Validation
 
@@ -174,6 +180,8 @@ The release bundle smoke verifies:
 - `checksums.sha256` for every release file except itself.
 - `open-skill-router-static-index.tar.gz` contains the static index files.
 - `skillrouter source health` can read the generated index directory.
+- `skillrouter search --source` and `recommend --source` can use the published
+  `search-index.json` artifact.
 
 Recommended mirror sync flow:
 

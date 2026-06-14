@@ -67,20 +67,32 @@ open-skill-router-indexer build ./skillrouter.source.yaml --out ./public/index
 index.json
 skills.jsonl
 skills.jsonl.sha256
+search-index.json
+search-index.json.sha256
 ```
 
 `index.json` has schema `skillrouter.static-index/v1` and points to the JSONL
 and checksum files. `skills.jsonl` contains one
-`skillrouter.skill-record/v1` record per skill. The CLI verifies
-`skills.jsonl` against `skillsSha256` when reading a static index through
-`--source`.
+`skillrouter.skill-record/v1` record per skill. `search-index.json` contains a
+prebuilt `skillrouter.search-index/v1` retrieval artifact for large-source
+search and recommendation. The CLI verifies `skills.jsonl` against
+`skillsSha256` when reading a full static index through `--source`, and verifies
+`search-index.json` against `searchIndexSha256` when a command can use the
+prebuilt search artifact.
+
+`skillrouter search --source <source>` automatically tries the static source's
+`search-index.json` before falling back to in-memory search. `skillrouter
+recommend --source <source>` also auto-enables search prefiltering when that
+artifact is available. Older static sources without `search-index.json` remain
+readable through the full `skills.jsonl` path.
 
 Remote static indexes are cached under the SkillRouter home directory at
 `.skillrouter/cache/static-sources`. If the network source is temporarily
 unavailable, the reader can fall back to the last cached snapshot for that URL.
 
 `source health` checks the primary source and mirrors, validates checksums, and
-reports whether each mirror's `skills.jsonl` hash matches the primary source.
+reports whether each mirror's `skills.jsonl` and `search-index.json` hashes
+match the primary source.
 
 ## Supported Inputs
 

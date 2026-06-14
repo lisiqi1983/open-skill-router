@@ -29,6 +29,7 @@ import {
   localIndexFromSkillSearchIndex,
   readSkillSearchIndex,
   readStaticSkillIndex,
+  readStaticSkillSearchIndex,
   readLocalSkillIndex,
   readSourceRegistry,
   recommendSkills,
@@ -42,6 +43,7 @@ import {
   renderSkillCatalogAnalysisMarkdown,
   type SkillCatalog,
   type SkillCatalogAnalysis,
+  type SkillSearchIndex,
   type SkillSearchHit,
   type SearchSkillsOptions,
   type ModelRerankOutput,
@@ -246,7 +248,12 @@ program
         : undefined;
       const prebuiltSearchIndex = options.searchIndex
         ? await readSkillSearchIndex(options.searchIndex)
-        : undefined;
+        : options.api
+          ? undefined
+          : await tryReadSourceSearchIndex({
+              source: options.source,
+              sourceRegistry: options.sourceRegistry,
+            });
       const useSearchPrefilter =
         options.searchPrefilter || Boolean(prebuiltSearchIndex);
       const mode = options.candidatePack
@@ -378,9 +385,15 @@ program
         json?: boolean;
       },
     ) => {
-      const result = options.searchIndex
+      const sourceSearchIndex = options.searchIndex
+        ? await readSkillSearchIndex(options.searchIndex)
+        : await tryReadSourceSearchIndex({
+            source: options.source,
+            sourceRegistry: options.sourceRegistry,
+          });
+      const result = sourceSearchIndex
         ? searchSkillIndex({
-            searchIndex: await readSkillSearchIndex(options.searchIndex),
+            searchIndex: sourceSearchIndex,
             query,
             maxResults: options.max,
             sourceTypes: options.sourceType,
@@ -830,6 +843,14 @@ sourceCommand
           console.log(
             `  Matches primary: ${check.checksumMatchesPrimary ? "yes" : "no"}`,
           );
+          if (check.searchIndexSha256) {
+            console.log(`  Search index SHA256: ${check.searchIndexSha256}`);
+            console.log(
+              `  Search index matches primary: ${
+                check.searchIndexChecksumMatchesPrimary ? "yes" : "no"
+              }`,
+            );
+          }
           if (check.cachePath) console.log(`  Cache: ${check.cachePath}`);
         } else {
           console.log(`  Error: ${check.error}`);
@@ -1380,15 +1401,43 @@ async function readRecommendationIndex(options: {
     return readLocalSkillIndex(options.indexPath);
   }
 
+  return readStaticSkillIndex(
+    await resolveStaticSourceTargets({
+      source: options.source,
+      sourceRegistry: options.sourceRegistry,
+    }),
+  );
+}
+
+async function tryReadSourceSearchIndex(options: {
+  source?: string;
+  sourceRegistry: string;
+}): Promise<SkillSearchIndex | undefined> {
+  if (!options.source) return undefined;
+
+  try {
+    return await readStaticSkillSearchIndex(
+      await resolveStaticSourceTargets({
+        source: options.source,
+        sourceRegistry: options.sourceRegistry,
+      }),
+    );
+  } catch {
+    return undefined;
+  }
+}
+
+async function resolveStaticSourceTargets(options: {
+  source: string;
+  sourceRegistry: string;
+}): Promise<string | string[]> {
   const registeredSource = await resolveSourceRegistryEntry(
     options.source,
     options.sourceRegistry,
   );
-  return readStaticSkillIndex(
-    registeredSource
-      ? [registeredSource.url, ...(registeredSource.mirrors ?? [])]
-      : options.source,
-  );
+  return registeredSource
+    ? [registeredSource.url, ...(registeredSource.mirrors ?? [])]
+    : options.source;
 }
 
 async function recommendWithApi(

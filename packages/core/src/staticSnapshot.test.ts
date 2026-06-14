@@ -11,8 +11,10 @@ import {
 } from "./sourceRegistry.js";
 import {
   checkStaticSourceHealth,
+  loadStaticSkillIndex,
   parseStaticSkillRecords,
   readStaticSkillIndex,
+  readStaticSkillSearchIndex,
   writeStaticSkillIndex,
 } from "./staticSnapshot.js";
 
@@ -67,6 +69,14 @@ skills:
     expect(await readFile(result.checksumPath, "utf8")).toContain(
       result.manifest.skillsSha256,
     );
+    expect(result.manifest.searchIndexPath).toBe("search-index.json");
+    expect(result.manifest.searchIndexChecksumPath).toBe(
+      "search-index.json.sha256",
+    );
+    expect(result.manifest.searchIndexSha256).toMatch(/^sha256:/);
+    expect(await readFile(result.searchIndexChecksumPath, "utf8")).toContain(
+      result.manifest.searchIndexSha256,
+    );
 
     const staticIndex = await readStaticSkillIndex(out);
     expect(staticIndex.skills.map((skill) => skill.skill.name)).toEqual([
@@ -74,6 +84,10 @@ skills:
       "patent-analysis",
       "presentation-deck",
     ]);
+
+    const searchIndex = await readStaticSkillSearchIndex(out);
+    expect(searchIndex.schemaVersion).toBe("skillrouter.search-index/v1");
+    expect(searchIndex.skillCount).toBe(3);
   });
 
   it("adds and resolves named static sources", async () => {
@@ -132,17 +146,31 @@ skills:
     const files = await staticFilesForFetch(out);
     const fetchOk = fakeFetch(files);
     const source = "https://example.com/index/";
-    const first = await readStaticSkillIndex(source, {
+    const first = await loadStaticSkillIndex(source, {
       fetchImpl: fetchOk,
       cacheDir: cache,
     });
-    expect(first.skills).toHaveLength(3);
+    expect(first.index.skills).toHaveLength(3);
+    expect(first.searchIndex?.skillCount).toBe(3);
 
-    const second = await readStaticSkillIndex(source, {
+    const second = await loadStaticSkillIndex(source, {
       fetchImpl: fakeFetch({}),
       cacheDir: cache,
     });
-    expect(second.skills).toHaveLength(3);
+    expect(second.index.skills).toHaveLength(3);
+    expect(second.searchIndex?.skillCount).toBe(3);
+
+    const searchOnlyCache = path.join(root, "search-cache");
+    const searchFirst = await readStaticSkillSearchIndex(source, {
+      fetchImpl: fetchOk,
+      cacheDir: searchOnlyCache,
+    });
+    expect(searchFirst.skillCount).toBe(3);
+    const searchSecond = await readStaticSkillSearchIndex(source, {
+      fetchImpl: fakeFetch({}),
+      cacheDir: searchOnlyCache,
+    });
+    expect(searchSecond.skillCount).toBe(3);
   });
 
   it("reports source health and checksum mismatches across mirrors", async () => {
@@ -175,12 +203,16 @@ skills:
         ok: true,
         role: "primary",
         checksumMatchesPrimary: true,
+        searchIndexSha256: expect.stringMatching(/^sha256:/),
+        searchIndexChecksumMatchesPrimary: true,
       }),
       expect.objectContaining({
         source: mirror,
         ok: true,
         role: "mirror",
         checksumMatchesPrimary: false,
+        searchIndexSha256: expect.stringMatching(/^sha256:/),
+        searchIndexChecksumMatchesPrimary: false,
       }),
     ]);
   });
@@ -196,6 +228,10 @@ async function staticFilesForFetch(
     ),
     "https://example.com/index/skills.jsonl": await readFile(
       path.join(out, "skills.jsonl"),
+      "utf8",
+    ),
+    "https://example.com/index/search-index.json": await readFile(
+      path.join(out, "search-index.json"),
       "utf8",
     ),
   };

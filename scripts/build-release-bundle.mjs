@@ -57,6 +57,8 @@ const artifacts = await describeArtifacts([
   path.join(indexDir, "index.json"),
   path.join(indexDir, "skills.jsonl"),
   path.join(indexDir, "skills.jsonl.sha256"),
+  path.join(indexDir, "search-index.json"),
+  path.join(indexDir, "search-index.json.sha256"),
   archivePath,
 ]);
 
@@ -72,8 +74,15 @@ const releaseManifest = {
     manifestPath: toPosix(path.relative(releaseRoot, staticBuild.manifestPath)),
     skillsPath: toPosix(path.relative(releaseRoot, staticBuild.skillsPath)),
     checksumPath: toPosix(path.relative(releaseRoot, staticBuild.checksumPath)),
+    searchIndexPath: toPosix(
+      path.relative(releaseRoot, staticBuild.searchIndexPath),
+    ),
+    searchIndexChecksumPath: toPosix(
+      path.relative(releaseRoot, staticBuild.searchIndexChecksumPath),
+    ),
     skillCount: staticManifest.skillCount,
     skillsSha256: staticManifest.skillsSha256,
+    searchIndexSha256: staticManifest.searchIndexSha256,
     generatedAt: staticManifest.generatedAt,
   },
   distribution: {
@@ -84,7 +93,7 @@ const releaseManifest = {
       process.env.SKILLROUTER_RELEASE_ASSET_BASE_URL ??
       `https://github.com/${repository}/releases/download/${releaseTag}/`,
     mirrorContract:
-      "Mirror hosts should serve index.json, skills.jsonl, and skills.jsonl.sha256 with the same relative paths and matching checksums.",
+      "Mirror hosts should serve index.json, skills.jsonl, skills.jsonl.sha256, search-index.json, and search-index.json.sha256 with the same relative paths and matching checksums.",
   },
   artifacts,
   checksumsPath: "checksums.sha256",
@@ -107,6 +116,7 @@ console.log(
       checksumsPath,
       skillCount: staticManifest.skillCount,
       skillsSha256: staticManifest.skillsSha256,
+      searchIndexSha256: staticManifest.searchIndexSha256,
     },
     null,
     2,

@@ -25,6 +25,7 @@
     "test:recommend-search": "pnpm build && node scripts/smoke-m13-search-prefilter.mjs",
     "test:persistent-search": "pnpm build && node scripts/smoke-m14-persistent-search-index.mjs",
     "test:search-refresh": "pnpm build && node scripts/smoke-m15-search-index-refresh.mjs",
+    "test:static-search-index": "pnpm build && node scripts/smoke-m16-static-source-search-index.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

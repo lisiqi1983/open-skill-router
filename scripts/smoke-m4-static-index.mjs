@@ -49,6 +49,30 @@ const checksum = await readFile(
 if (!checksum.includes(manifest.skillsSha256)) {
   throw new Error("Static index checksum file does not include manifest hash.");
 }
+if (manifest.searchIndexPath !== "search-index.json") {
+  throw new Error("Static index manifest is missing search-index.json path.");
+}
+if (!manifest.searchIndexSha256?.startsWith("sha256:")) {
+  throw new Error("Static index manifest is missing search index checksum.");
+}
+const searchIndex = JSON.parse(
+  await readFile(path.join(outDir, "search-index.json"), "utf8"),
+);
+if (
+  searchIndex.schemaVersion !== "skillrouter.search-index/v1" ||
+  searchIndex.skillCount !== 3
+) {
+  throw new Error("Static search index artifact is invalid.");
+}
+const searchChecksum = await readFile(
+  path.join(outDir, "search-index.json.sha256"),
+  "utf8",
+);
+if (!searchChecksum.includes(manifest.searchIndexSha256)) {
+  throw new Error(
+    "Static search index checksum file does not include manifest hash.",
+  );
+}
 
 const directRecommend = JSON.parse(
   await runCli([
@@ -60,6 +84,7 @@ const directRecommend = JSON.parse(
   ]),
 );
 assertPresentationDeck(directRecommend, "direct static source");
+assertSearchPrefilter(directRecommend, "direct static source");
 
 await runCli([
   "source",
@@ -83,6 +108,7 @@ const registryRecommend = JSON.parse(
   ]),
 );
 assertPresentationDeck(registryRecommend, "registered static source");
+assertSearchPrefilter(registryRecommend, "registered static source");
 
 const health = JSON.parse(
   await runCli([
@@ -113,5 +139,11 @@ function assertPresentationDeck(result, label) {
   const first = result.recommendations?.[0]?.skill?.name;
   if (first !== "presentation-deck") {
     throw new Error(`Expected presentation-deck from ${label}, got ${first}.`);
+  }
+}
+
+function assertSearchPrefilter(result, label) {
+  if (result.searchPrefilter?.totalSkillCount !== 3) {
+    throw new Error(`Expected source search prefilter from ${label}.`);
   }
 }

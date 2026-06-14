@@ -27,6 +27,8 @@ dist/release/
     index.json
     skills.jsonl
     skills.jsonl.sha256
+    search-index.json
+    search-index.json.sha256
 ```
 
 `dist/release/public/open-skill-router/index/` is the same directory shape used
@@ -39,7 +41,8 @@ contains that directory tree for GitHub Releases and manual mirror sync.
 
 - Package version.
 - Git commit and ref.
-- Static index location, skill count, generated time, and `skillsSha256`.
+- Static index location, skill count, generated time, `skillsSha256`, and
+  `searchIndexSha256`.
 - GitHub Pages URL and GitHub Release asset base URL.
 - Artifact byte sizes and SHA-256 hashes.
 
@@ -53,7 +56,7 @@ the files exactly and compare their hashes with this file after sync.
 - Formatting.
 - Typecheck.
 - Unit tests.
-- M0-M5 smoke tests.
+- M0-M16 smoke tests, including static source search-index reuse.
 - M6 release bundle smoke.
 
 `publish-index.yml` publishes the static index to GitHub Pages.
@@ -67,16 +70,20 @@ bundle, then uploads these assets to the GitHub Release:
 - `index.json`
 - `skills.jsonl`
 - `skills.jsonl.sha256`
+- `search-index.json`
+- `search-index.json.sha256`
 
 ## Mirror Contract
 
-Mirror hosts should serve the same three static index files with identical
+Mirror hosts should serve the same five static index files with identical
 relative paths:
 
 ```text
 open-skill-router/index/index.json
 open-skill-router/index/skills.jsonl
 open-skill-router/index/skills.jsonl.sha256
+open-skill-router/index/search-index.json
+open-skill-router/index/search-index.json.sha256
 ```
 
 After syncing a mirror, check it from a client:
@@ -88,4 +95,4 @@ skillrouter recommend "帮我生成一份产品发布 PPT" --source public
 ```
 
 The mirror is healthy when `skillrouter source health` reports matching
-`skillsSha256` values for primary and mirror.
+`skillsSha256` and `searchIndexSha256` values for primary and mirror.

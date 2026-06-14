@@ -229,6 +229,9 @@ export interface StaticSkillIndexManifest {
   skillsPath: string;
   checksumPath: string;
   skillsSha256: string;
+  searchIndexPath?: string;
+  searchIndexChecksumPath?: string;
+  searchIndexSha256?: string;
 }
 
 export interface StaticSkillRecord {
@@ -261,7 +264,9 @@ export interface StaticSourceHealthCheck {
   generatedAt?: string;
   skillCount?: number;
   skillsSha256?: string;
+  searchIndexSha256?: string;
   checksumMatchesPrimary?: boolean;
+  searchIndexChecksumMatchesPrimary?: boolean;
   cachePath?: string;
   error?: string;
 }

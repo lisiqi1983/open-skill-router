@@ -83,3 +83,6 @@ jobs:
 
       - name: Search index refresh smoke
         run: pnpm test:search-refresh
+
+      - name: Static source search index smoke
+        run: pnpm test:static-search-index

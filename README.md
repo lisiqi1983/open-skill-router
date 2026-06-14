@@ -123,6 +123,10 @@ prefiltered candidate pool for large Skill indexes, and persistent
 repeated local, MCP, and API search-prefiltered recommendation. Search indexes
 now include source and per-Skill fingerprints so the CLI can report fresh/stale
 status, skip unnecessary rebuilds, and incrementally reuse unchanged documents.
+Static source publishing now includes `search-index.json` and
+`search-index.json.sha256`; CLI `search --source` and `recommend --source`
+automatically use that prebuilt artifact when available, while older static
+sources continue to work through `skills.jsonl`.
 
 Try it locally:
 
@@ -191,6 +195,7 @@ pnpm test:search
 pnpm test:recommend-search
 pnpm test:persistent-search
 pnpm test:search-refresh
+pnpm test:static-search-index
 pnpm build
 ```
 

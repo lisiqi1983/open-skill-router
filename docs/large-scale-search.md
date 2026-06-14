@@ -77,6 +77,21 @@ The artifact uses schema `skillrouter.search-index/v1` and includes source
 fingerprints for fresh/stale checks; see
 [Persistent Search Index](persistent-search-index.md).
 
+M16 publishes the same search index beside static source snapshots:
+
+```text
+index.json
+skills.jsonl
+skills.jsonl.sha256
+search-index.json
+search-index.json.sha256
+```
+
+For static sources that include this artifact, `skillrouter search --source` and
+`skillrouter recommend --source` automatically use `search-index.json` first.
+This lets public mirrors serve fast retrieval without requiring users to build a
+local persistent index before their first query.
+
 ## Future Backends
 
 The current implementation supports both in-memory search and a dependency-free
@@ -86,4 +101,4 @@ later be backed by:
 - SQLite FTS5 for persistent local keyword search
 - sqlite-vec or LanceDB for local vector search
 - Qdrant, OpenSearch, or Meilisearch for team-scale hosted search
-- prebuilt public search shards published beside static index snapshots
+- sharded public search artifacts published beside static index snapshots

@@ -25,6 +25,8 @@ const archivePath = path.join(
 await assertFile(path.join(indexDir, "index.json"));
 await assertFile(path.join(indexDir, "skills.jsonl"));
 await assertFile(path.join(indexDir, "skills.jsonl.sha256"));
+await assertFile(path.join(indexDir, "search-index.json"));
+await assertFile(path.join(indexDir, "search-index.json.sha256"));
 await assertFile(releaseManifestPath);
 await assertFile(checksumsPath);
 await assertFile(archivePath);
@@ -41,10 +43,14 @@ if (releaseManifest.staticIndex.skillCount < 1) {
 if (!releaseManifest.staticIndex.skillsSha256?.startsWith("sha256:")) {
   throw new Error("Release manifest is missing static index checksum.");
 }
+if (!releaseManifest.staticIndex.searchIndexSha256?.startsWith("sha256:")) {
+  throw new Error("Release manifest is missing static search index checksum.");
+}
 
 await verifyChecksums();
 await verifyArchive();
 await verifyStaticSourceHealth();
+await verifyStaticSourceSearchIndex();
 
 console.log("Smoke M6 release bundle passed.");
 
@@ -78,6 +84,8 @@ async function verifyChecksums() {
     "public/open-skill-router/index/index.json",
     "public/open-skill-router/index/skills.jsonl",
     "public/open-skill-router/index/skills.jsonl.sha256",
+    "public/open-skill-router/index/search-index.json",
+    "public/open-skill-router/index/search-index.json.sha256",
   ]) {
     if (!seen.has(required)) {
       throw new Error(`checksums.sha256 is missing ${required}.`);
@@ -92,6 +100,8 @@ async function verifyArchive() {
     "open-skill-router/index/index.json",
     "open-skill-router/index/skills.jsonl",
     "open-skill-router/index/skills.jsonl.sha256",
+    "open-skill-router/index/search-index.json",
+    "open-skill-router/index/search-index.json.sha256",
   ]) {
     if (!names.includes(required)) {
       throw new Error(`Release archive is missing ${required}.`);
@@ -111,6 +121,29 @@ async function verifyStaticSourceHealth() {
   const report = JSON.parse(stdout);
   if (report.checks?.[0]?.ok !== true) {
     throw new Error(`Static source health failed: ${stdout}`);
+  }
+}
+
+async function verifyStaticSourceSearchIndex() {
+  const { stdout } = await execFileAsync(
+    process.execPath,
+    [
+      cliPath,
+      "search",
+      "review TypeScript code changes before merging",
+      "--source",
+      indexDir,
+      "--json",
+    ],
+    {
+      cwd: repoRoot,
+      maxBuffer: 10 * 1024 * 1024,
+    },
+  );
+  const result = JSON.parse(stdout);
+  const first = result.results?.[0]?.skill?.name;
+  if (first !== "code-review") {
+    throw new Error(`Static source search failed: ${stdout}`);
   }
 }
 

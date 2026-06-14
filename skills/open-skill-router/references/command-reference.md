@@ -24,6 +24,11 @@ skillrouter search "generate product launch slides" --index .skillrouter/index.j
 skillrouter search "local PDF report writing" --local-only --environment local_filesystem --json
 ```
 
+When a static source publishes `search-index.json`, `search --source` uses that
+prebuilt artifact automatically. `recommend --source` also auto-enables search
+prefiltering from the same artifact; older static sources still fall back to
+`skills.jsonl`.
+
 Build and reuse a persistent search index for large Skill collections:
 
 ```bash

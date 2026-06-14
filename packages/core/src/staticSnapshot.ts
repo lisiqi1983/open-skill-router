@@ -2,9 +2,12 @@ import { createHash } from "node:crypto";
 import { promises as fs } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
+import { buildSkillSearchIndex } from "./searchSkills.js";
+import { parseSkillSearchIndex } from "./skillSearchIndex.js";
 import type {
   IndexedSkill,
   LocalSkillIndex,
+  SkillSearchIndex,
   StaticSourceHealthCheck,
   StaticSourceHealthReport,
   StaticSkillIndexManifest,
@@ -14,6 +17,8 @@ import type {
 export const STATIC_INDEX_FILE = "index.json";
 export const SKILLS_JSONL_FILE = "skills.jsonl";
 export const SKILLS_CHECKSUM_FILE = "skills.jsonl.sha256";
+export const SEARCH_INDEX_FILE = "search-index.json";
+export const SEARCH_INDEX_CHECKSUM_FILE = "search-index.json.sha256";
 
 export interface WriteStaticSkillIndexOptions {
   name: string;
@@ -27,6 +32,8 @@ export interface WriteStaticSkillIndexResult {
   manifestPath: string;
   skillsPath: string;
   checksumPath: string;
+  searchIndexPath: string;
+  searchIndexChecksumPath: string;
 }
 
 export interface ReadStaticSkillIndexOptions {
@@ -39,6 +46,8 @@ export interface LoadedStaticSkillIndex {
   index: LocalSkillIndex;
   manifest?: StaticSkillIndexManifest;
   skillsSha256?: string;
+  searchIndex?: SkillSearchIndex;
+  searchIndexSha256?: string;
   cachePath?: string;
 }
 
@@ -47,6 +56,15 @@ interface StaticSourceDescriptor {
   jsonl: string;
   generatedAt?: string;
   skillsSha256?: string;
+  searchIndexJson?: string;
+  searchIndexSha256?: string;
+  cachePath?: string;
+}
+
+interface StaticSearchIndexDescriptor {
+  manifest: StaticSkillIndexManifest;
+  searchIndexJson: string;
+  searchIndexSha256: string;
   cachePath?: string;
 }
 
@@ -62,6 +80,9 @@ export async function writeStaticSkillIndex(
     .join("\n")
     .concat(records.length > 0 ? "\n" : "");
   const skillsSha256 = `sha256:${sha256(jsonl)}`;
+  const searchIndex = buildSkillSearchIndex(index, { now: options.now });
+  const searchIndexJson = `${JSON.stringify(searchIndex, null, 2)}\n`;
+  const searchIndexSha256 = `sha256:${sha256(searchIndexJson)}`;
   const manifest: StaticSkillIndexManifest = {
     schemaVersion: "skillrouter.static-index/v1",
     generatedAt,
@@ -72,16 +93,30 @@ export async function writeStaticSkillIndex(
     skillsPath: SKILLS_JSONL_FILE,
     checksumPath: SKILLS_CHECKSUM_FILE,
     skillsSha256,
+    searchIndexPath: SEARCH_INDEX_FILE,
+    searchIndexChecksumPath: SEARCH_INDEX_CHECKSUM_FILE,
+    searchIndexSha256,
   };
   const manifestPath = path.join(outputDir, STATIC_INDEX_FILE);
   const skillsPath = path.join(outputDir, SKILLS_JSONL_FILE);
   const checksumPath = path.join(outputDir, SKILLS_CHECKSUM_FILE);
+  const searchIndexPath = path.join(outputDir, SEARCH_INDEX_FILE);
+  const searchIndexChecksumPath = path.join(
+    outputDir,
+    SEARCH_INDEX_CHECKSUM_FILE,
+  );
 
   await fs.mkdir(outputDir, { recursive: true });
   await fs.writeFile(skillsPath, jsonl, "utf8");
   await fs.writeFile(
     checksumPath,
     `${skillsSha256}  ${SKILLS_JSONL_FILE}\n`,
+    "utf8",
+  );
+  await fs.writeFile(searchIndexPath, searchIndexJson, "utf8");
+  await fs.writeFile(
+    searchIndexChecksumPath,
+    `${searchIndexSha256}  ${SEARCH_INDEX_FILE}\n`,
     "utf8",
   );
   await fs.writeFile(
@@ -95,6 +130,8 @@ export async function writeStaticSkillIndex(
     manifestPath,
     skillsPath,
     checksumPath,
+    searchIndexPath,
+    searchIndexChecksumPath,
   };
 }
 
@@ -104,6 +141,33 @@ export async function readStaticSkillIndex(
 ): Promise<LocalSkillIndex> {
   const loaded = await loadStaticSkillIndex(source, options);
   return loaded.index;
+}
+
+export async function readStaticSkillSearchIndex(
+  source: string | string[],
+  options: ReadStaticSkillIndexOptions = {},
+): Promise<SkillSearchIndex> {
+  const sources = Array.isArray(source) ? source : [source];
+  const errors: string[] = [];
+
+  for (const candidate of sources) {
+    try {
+      const descriptor = await readStaticSearchIndexDescriptor(
+        candidate,
+        options,
+      );
+      return parseSkillSearchIndex(
+        descriptor.searchIndexJson,
+        descriptor.cachePath ?? candidate,
+      );
+    } catch (error) {
+      errors.push(`${candidate}: ${errorMessage(error)}`);
+    }
+  }
+
+  throw new Error(
+    `Unable to read static Skill search index from configured sources. ${errors.join(" ")}`,
+  );
 }
 
 export async function loadStaticSkillIndex(
@@ -135,6 +199,7 @@ export async function checkStaticSourceHealth(
   const checks: StaticSourceHealthCheck[] = [];
   let selectedSource: string | undefined;
   let primarySha: string | undefined;
+  let primarySearchSha: string | undefined;
 
   for (const [index, source] of sources.entries()) {
     const role =
@@ -148,6 +213,9 @@ export async function checkStaticSourceHealth(
       const skillsSha256 =
         descriptor.skillsSha256 ?? `sha256:${sha256(descriptor.jsonl)}`;
       if (!primarySha) primarySha = skillsSha256;
+      if (!primarySearchSha && descriptor.searchIndexSha256) {
+        primarySearchSha = descriptor.searchIndexSha256;
+      }
       if (!selectedSource) selectedSource = source;
 
       checks.push({
@@ -157,7 +225,11 @@ export async function checkStaticSourceHealth(
         generatedAt: descriptor.generatedAt,
         skillCount: records.length,
         skillsSha256,
+        searchIndexSha256: descriptor.searchIndexSha256,
         checksumMatchesPrimary: skillsSha256 === primarySha,
+        searchIndexChecksumMatchesPrimary: descriptor.searchIndexSha256
+          ? descriptor.searchIndexSha256 === primarySearchSha
+          : undefined,
         cachePath: descriptor.cachePath,
       });
     } catch (error) {
@@ -192,6 +264,9 @@ async function loadSingleStaticSkillIndex(
   options: ReadStaticSkillIndexOptions,
 ): Promise<LoadedStaticSkillIndex> {
   const descriptor = await readStaticSourceDescriptor(source, options);
+  const searchIndex = descriptor.searchIndexJson
+    ? parseSkillSearchIndex(descriptor.searchIndexJson, source)
+    : undefined;
   return {
     index: recordsToLocalIndex(
       parseStaticSkillRecords(descriptor.jsonl),
@@ -200,6 +275,8 @@ async function loadSingleStaticSkillIndex(
     ),
     manifest: descriptor.manifest,
     skillsSha256: descriptor.skillsSha256,
+    searchIndex,
+    searchIndexSha256: descriptor.searchIndexSha256,
     cachePath: descriptor.cachePath,
   };
 }
@@ -212,6 +289,16 @@ async function readStaticSourceDescriptor(
     return readRemoteStaticSourceDescriptor(source, options);
   }
   return readLocalStaticSourceDescriptor(source);
+}
+
+async function readStaticSearchIndexDescriptor(
+  source: string,
+  options: ReadStaticSkillIndexOptions,
+): Promise<StaticSearchIndexDescriptor> {
+  if (isHttpUrl(source)) {
+    return readRemoteStaticSearchIndexDescriptor(source, options);
+  }
+  return readLocalStaticSearchIndexDescriptor(source);
 }
 
 export function parseStaticSkillRecords(jsonl: string): StaticSkillRecord[] {
@@ -241,11 +328,14 @@ async function readLocalStaticSourceDescriptor(
     const skillsPath = path.resolve(source, manifest.skillsPath);
     const skillsJsonl = await fs.readFile(skillsPath, "utf8");
     verifySha256(skillsJsonl, manifest.skillsSha256, skillsPath);
+    const searchIndex = await readLocalSearchIndexDescriptor(source, manifest);
     return {
       manifest,
       jsonl: skillsJsonl,
       generatedAt: manifest.generatedAt,
       skillsSha256: manifest.skillsSha256,
+      searchIndexJson: searchIndex?.json,
+      searchIndexSha256: searchIndex?.sha256,
     };
   }
 
@@ -258,11 +348,17 @@ async function readLocalStaticSourceDescriptor(
     const skillsPath = path.resolve(sourceDir, manifest.skillsPath);
     const skillsJsonl = await fs.readFile(skillsPath, "utf8");
     verifySha256(skillsJsonl, manifest.skillsSha256, skillsPath);
+    const searchIndex = await readLocalSearchIndexDescriptor(
+      sourceDir,
+      manifest,
+    );
     return {
       manifest,
       jsonl: skillsJsonl,
       generatedAt: manifest.generatedAt,
       skillsSha256: manifest.skillsSha256,
+      searchIndexJson: searchIndex?.json,
+      searchIndexSha256: searchIndex?.sha256,
     };
   }
 
@@ -270,6 +366,36 @@ async function readLocalStaticSourceDescriptor(
   return {
     jsonl,
     skillsSha256: `sha256:${sha256(jsonl)}`,
+  };
+}
+
+async function readLocalStaticSearchIndexDescriptor(
+  source: string,
+): Promise<StaticSearchIndexDescriptor> {
+  const stat = await fs.stat(source);
+  const manifestPath = stat.isDirectory()
+    ? path.join(source, STATIC_INDEX_FILE)
+    : source.endsWith(".json")
+      ? source
+      : undefined;
+  if (!manifestPath) {
+    throw new Error("Static source does not include a search index artifact.");
+  }
+
+  const manifest = parseStaticIndexManifest(
+    await fs.readFile(manifestPath, "utf8"),
+    manifestPath,
+  );
+  const sourceDir = path.dirname(manifestPath);
+  const searchIndex = await readLocalSearchIndexDescriptor(sourceDir, manifest);
+  if (!searchIndex) {
+    throw new Error("Static source does not include a search index artifact.");
+  }
+
+  return {
+    manifest,
+    searchIndexJson: searchIndex.json,
+    searchIndexSha256: searchIndex.sha256,
   };
 }
 
@@ -304,6 +430,38 @@ async function readRemoteStaticSourceDescriptor(
   }
 }
 
+async function readRemoteStaticSearchIndexDescriptor(
+  source: string,
+  options: ReadStaticSkillIndexOptions,
+): Promise<StaticSearchIndexDescriptor> {
+  const fetchImpl = options.fetchImpl ?? fetch;
+  const useCache = options.useCache ?? true;
+  const cacheDir = options.cacheDir ?? defaultStaticSnapshotCacheDir();
+  const cachePath = path.join(cacheDir, sha256(source));
+
+  try {
+    const descriptor = await fetchRemoteSearchIndexDescriptor(
+      source,
+      fetchImpl,
+    );
+    if (useCache) {
+      await writeCachedRemoteSearchIndexDescriptor(cachePath, descriptor);
+      descriptor.cachePath = cachePath;
+    }
+    return descriptor;
+  } catch (error) {
+    if (!useCache) throw error;
+    try {
+      return {
+        ...(await readCachedRemoteSearchIndexDescriptor(cachePath)),
+        cachePath,
+      };
+    } catch {
+      throw error;
+    }
+  }
+}
+
 async function fetchRemoteJsonlDescriptor(
   source: string,
   fetchImpl: typeof fetch,
@@ -330,12 +488,94 @@ async function fetchRemoteManifestDescriptor(
   const skillsUrl = new URL(manifest.skillsPath, manifestUrl).toString();
   const skillsJsonl = await fetchText(fetchImpl, skillsUrl);
   verifySha256(skillsJsonl, manifest.skillsSha256, skillsUrl);
+  const searchIndex = await fetchSearchIndexDescriptor(
+    manifest,
+    manifestUrl,
+    fetchImpl,
+  );
   return {
     manifest,
     jsonl: skillsJsonl,
     generatedAt: manifest.generatedAt,
     skillsSha256: manifest.skillsSha256,
+    searchIndexJson: searchIndex?.json,
+    searchIndexSha256: searchIndex?.sha256,
   };
+}
+
+async function fetchRemoteSearchIndexDescriptor(
+  source: string,
+  fetchImpl: typeof fetch,
+): Promise<StaticSearchIndexDescriptor> {
+  if (source.endsWith(".jsonl")) {
+    throw new Error(
+      "Static JSONL sources do not include search index artifacts.",
+    );
+  }
+
+  const manifestUrl = source.endsWith(".json")
+    ? source
+    : new URL(STATIC_INDEX_FILE, ensureTrailingSlash(source)).toString();
+  const manifest = parseStaticIndexManifest(
+    await fetchText(fetchImpl, manifestUrl),
+    manifestUrl,
+  );
+  const searchIndex = await fetchSearchIndexDescriptor(
+    manifest,
+    manifestUrl,
+    fetchImpl,
+  );
+  if (!searchIndex) {
+    throw new Error("Static source does not include a search index artifact.");
+  }
+
+  return {
+    manifest,
+    searchIndexJson: searchIndex.json,
+    searchIndexSha256: searchIndex.sha256,
+  };
+}
+
+async function readLocalSearchIndexDescriptor(
+  sourceDir: string,
+  manifest: StaticSkillIndexManifest,
+): Promise<{ json: string; sha256: string } | undefined> {
+  if (!manifest.searchIndexPath) return undefined;
+  if (!manifest.searchIndexSha256) {
+    throw new Error(
+      `Static index manifest is missing searchIndexSha256 for ${sourceDir}.`,
+    );
+  }
+
+  const searchIndexPath = path.resolve(sourceDir, manifest.searchIndexPath);
+  const searchIndexJson = await fs.readFile(searchIndexPath, "utf8");
+  verifySha256(searchIndexJson, manifest.searchIndexSha256, searchIndexPath);
+  parseSkillSearchIndex(searchIndexJson, searchIndexPath);
+
+  return { json: searchIndexJson, sha256: manifest.searchIndexSha256 };
+}
+
+async function fetchSearchIndexDescriptor(
+  manifest: StaticSkillIndexManifest,
+  manifestUrl: string,
+  fetchImpl: typeof fetch,
+): Promise<{ json: string; sha256: string } | undefined> {
+  if (!manifest.searchIndexPath) return undefined;
+  if (!manifest.searchIndexSha256) {
+    throw new Error(
+      `Static index manifest is missing searchIndexSha256: ${manifestUrl}.`,
+    );
+  }
+
+  const searchIndexUrl = new URL(
+    manifest.searchIndexPath,
+    manifestUrl,
+  ).toString();
+  const searchIndexJson = await fetchText(fetchImpl, searchIndexUrl);
+  verifySha256(searchIndexJson, manifest.searchIndexSha256, searchIndexUrl);
+  parseSkillSearchIndex(searchIndexJson, searchIndexUrl);
+
+  return { json: searchIndexJson, sha256: manifest.searchIndexSha256 };
 }
 
 async function writeCachedRemoteDescriptor(
@@ -353,6 +593,18 @@ async function writeCachedRemoteDescriptor(
     `${descriptor.skillsSha256 ?? `sha256:${sha256(descriptor.jsonl)}`}  ${SKILLS_JSONL_FILE}\n`,
     "utf8",
   );
+  if (descriptor.searchIndexJson) {
+    await fs.writeFile(
+      path.join(cachePath, SEARCH_INDEX_FILE),
+      descriptor.searchIndexJson,
+      "utf8",
+    );
+    await fs.writeFile(
+      path.join(cachePath, SEARCH_INDEX_CHECKSUM_FILE),
+      `${descriptor.searchIndexSha256 ?? `sha256:${sha256(descriptor.searchIndexJson)}`}  ${SEARCH_INDEX_FILE}\n`,
+      "utf8",
+    );
+  }
   if (descriptor.manifest) {
     await fs.writeFile(
       path.join(cachePath, STATIC_INDEX_FILE),
@@ -360,6 +612,28 @@ async function writeCachedRemoteDescriptor(
       "utf8",
     );
   }
+}
+
+async function writeCachedRemoteSearchIndexDescriptor(
+  cachePath: string,
+  descriptor: StaticSearchIndexDescriptor,
+): Promise<void> {
+  await fs.mkdir(cachePath, { recursive: true });
+  await fs.writeFile(
+    path.join(cachePath, SEARCH_INDEX_FILE),
+    descriptor.searchIndexJson,
+    "utf8",
+  );
+  await fs.writeFile(
+    path.join(cachePath, SEARCH_INDEX_CHECKSUM_FILE),
+    `${descriptor.searchIndexSha256}  ${SEARCH_INDEX_FILE}\n`,
+    "utf8",
+  );
+  await fs.writeFile(
+    path.join(cachePath, STATIC_INDEX_FILE),
+    `${JSON.stringify(descriptor.manifest, null, 2)}\n`,
+    "utf8",
+  );
 }
 
 async function readCachedRemoteDescriptor(
@@ -384,11 +658,38 @@ async function readCachedRemoteDescriptor(
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
   }
+  const searchIndex = manifest
+    ? await readLocalSearchIndexDescriptor(cachePath, manifest)
+    : undefined;
   return {
     manifest,
     jsonl,
     generatedAt: manifest?.generatedAt,
     skillsSha256: manifest?.skillsSha256 ?? `sha256:${sha256(jsonl)}`,
+    searchIndexJson: searchIndex?.json,
+    searchIndexSha256: searchIndex?.sha256,
+  };
+}
+
+async function readCachedRemoteSearchIndexDescriptor(
+  cachePath: string,
+): Promise<StaticSearchIndexDescriptor> {
+  const manifestPath = path.join(cachePath, STATIC_INDEX_FILE);
+  const manifest = parseStaticIndexManifest(
+    await fs.readFile(manifestPath, "utf8"),
+    manifestPath,
+  );
+  const searchIndex = await readLocalSearchIndexDescriptor(cachePath, manifest);
+  if (!searchIndex) {
+    throw new Error(
+      "Cached static source does not include a search index artifact.",
+    );
+  }
+
+  return {
+    manifest,
+    searchIndexJson: searchIndex.json,
+    searchIndexSha256: searchIndex.sha256,
   };
 }
 
@@ -400,7 +701,13 @@ function parseStaticIndexManifest(
   if (
     parsed.schemaVersion !== "skillrouter.static-index/v1" ||
     typeof parsed.skillsPath !== "string" ||
-    typeof parsed.skillsSha256 !== "string"
+    typeof parsed.skillsSha256 !== "string" ||
+    (parsed.searchIndexPath !== undefined &&
+      typeof parsed.searchIndexPath !== "string") ||
+    (parsed.searchIndexChecksumPath !== undefined &&
+      typeof parsed.searchIndexChecksumPath !== "string") ||
+    (parsed.searchIndexSha256 !== undefined &&
+      typeof parsed.searchIndexSha256 !== "string")
   ) {
     throw new Error(`Invalid static skill index manifest: ${source}`);
   }
