@@ -80,3 +80,6 @@ jobs:
 
       - name: Persistent search index smoke
         run: pnpm test:persistent-search
+
+      - name: Search index refresh smoke
+        run: pnpm test:search-refresh

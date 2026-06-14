@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { Command } from "commander";
 import {
@@ -21,7 +21,9 @@ import {
   addSourceRegistryEntry,
   analyzeSkillCatalog,
   buildSkillSearchIndex,
+  buildSkillSearchIndexWithStats,
   buildSkillCatalog,
+  checkSkillSearchIndexFreshness,
   checkStaticSourceHealth,
   discoverLocalSkills,
   localIndexFromSkillSearchIndex,
@@ -437,6 +439,11 @@ searchIndexCommand
     "Output persistent search index path.",
     defaultProjectSearchIndexPath(),
   )
+  .option(
+    "--incremental",
+    "Reuse unchanged skill documents from the existing output search index.",
+  )
+  .option("--if-stale", "Skip rebuild when the existing search index is fresh.")
   .option("--json", "Print machine-readable JSON.")
   .action(
     async (options: {
@@ -444,6 +451,8 @@ searchIndexCommand
       source?: string;
       sourceRegistry: string;
       out: string;
+      incremental?: boolean;
+      ifStale?: boolean;
       json?: boolean;
     }) => {
       const sourceIndex = await readRecommendationIndex({
@@ -451,15 +460,58 @@ searchIndexCommand
         source: options.source,
         sourceRegistry: options.sourceRegistry,
       });
-      const searchIndex = buildSkillSearchIndex(sourceIndex);
-      await writeSkillSearchIndex(searchIndex, options.out);
+      const previousIndex =
+        options.incremental || options.ifStale
+          ? await readExistingSearchIndex(options.out)
+          : undefined;
+      const freshness = previousIndex
+        ? checkSkillSearchIndexFreshness(sourceIndex, previousIndex)
+        : undefined;
+
+      if (options.ifStale && freshness?.status === "fresh") {
+        const freshSearchIndex = previousIndex;
+        if (!freshSearchIndex) {
+          throw new Error(
+            "Fresh search index status requires an existing index.",
+          );
+        }
+        if (options.json) {
+          console.log(
+            JSON.stringify(
+              {
+                outputPath: options.out,
+                skipped: true,
+                freshness,
+                searchIndex: freshSearchIndex,
+              },
+              null,
+              2,
+            ),
+          );
+          return;
+        }
+
+        console.log("Search index is fresh; skipped rebuild.");
+        printSearchIndexSummary(freshSearchIndex, options.out);
+        return;
+      }
+
+      const build = buildSkillSearchIndexWithStats(sourceIndex, {
+        previousIndex:
+          options.incremental || options.ifStale ? previousIndex : undefined,
+      });
+      await writeSkillSearchIndex(build.searchIndex, options.out);
 
       if (options.json) {
         console.log(
           JSON.stringify(
             {
               outputPath: options.out,
-              searchIndex,
+              skipped: false,
+              freshnessBeforeBuild: freshness,
+              reusedDocumentCount: build.reusedDocumentCount,
+              rebuiltDocumentCount: build.rebuiltDocumentCount,
+              searchIndex: build.searchIndex,
             },
             null,
             2,
@@ -468,7 +520,56 @@ searchIndexCommand
         return;
       }
 
-      printSearchIndexSummary(searchIndex, options.out);
+      printSearchIndexBuildSummary(build, options.out, freshness);
+    },
+  );
+
+searchIndexCommand
+  .command("status")
+  .description(
+    "Check whether a persistent search index matches its source index.",
+  )
+  .option("-i, --index <path>", "Local index path.", defaultProjectIndexPath())
+  .option(
+    "--source <name-or-url>",
+    "Static source name, directory, JSONL file, or URL.",
+  )
+  .option(
+    "--source-registry <path>",
+    "Source registry path.",
+    defaultSourceRegistryPath(),
+  )
+  .option(
+    "--search-index <path>",
+    "Persistent search index path.",
+    defaultProjectSearchIndexPath(),
+  )
+  .option("--json", "Print machine-readable JSON.")
+  .action(
+    async (options: {
+      index: string;
+      source?: string;
+      sourceRegistry: string;
+      searchIndex: string;
+      json?: boolean;
+    }) => {
+      const sourceIndex = await readRecommendationIndex({
+        indexPath: options.index,
+        source: options.source,
+        sourceRegistry: options.sourceRegistry,
+      });
+      const searchIndex = await readSkillSearchIndex(options.searchIndex);
+      const freshness = checkSkillSearchIndexFreshness(
+        sourceIndex,
+        searchIndex,
+      );
+
+      if (options.json) {
+        console.log(JSON.stringify(freshness, null, 2));
+        return;
+      }
+
+      printSearchIndexFreshness(freshness, options.searchIndex);
     },
   );
 
@@ -1087,6 +1188,44 @@ function printSearchIndexSummary(
   console.log(`Output: ${outputPath}`);
 }
 
+function printSearchIndexBuildSummary(
+  build: ReturnType<typeof buildSkillSearchIndexWithStats>,
+  outputPath: string,
+  freshnessBeforeBuild?: ReturnType<typeof checkSkillSearchIndexFreshness>,
+): void {
+  printSearchIndexSummary(build.searchIndex, outputPath);
+  console.log(`Reused documents: ${build.reusedDocumentCount}`);
+  console.log(`Rebuilt documents: ${build.rebuiltDocumentCount}`);
+  if (freshnessBeforeBuild) {
+    console.log(`Previous status: ${freshnessBeforeBuild.status}`);
+  }
+}
+
+function printSearchIndexFreshness(
+  freshness: ReturnType<typeof checkSkillSearchIndexFreshness>,
+  searchIndexPath: string,
+): void {
+  console.log(`Search index: ${searchIndexPath}`);
+  console.log(`Status: ${freshness.status}`);
+  console.log(`Source root: ${freshness.sourceRoot}`);
+  console.log(
+    `Skills: source=${freshness.sourceSkillCount}, search-index=${freshness.searchIndexSkillCount}`,
+  );
+  if (freshness.missingSkillIds.length > 0) {
+    console.log(`Missing skills: ${freshness.missingSkillIds.join(", ")}`);
+  }
+  if (freshness.staleSkillIds.length > 0) {
+    console.log(`Stale skills: ${freshness.staleSkillIds.join(", ")}`);
+  }
+  if (freshness.extraSkillIds.length > 0) {
+    console.log(`Extra skills: ${freshness.extraSkillIds.join(", ")}`);
+  }
+  console.log("Reasons:");
+  for (const reason of freshness.reasons) {
+    console.log(`- ${reason}`);
+  }
+}
+
 function printSearchHit(hit: SkillSearchHit): void {
   console.log(`[${hit.rank}] ${hit.skill.displayName ?? hit.skill.name}`);
   console.log(`    Score: ${hit.score} / 100`);
@@ -1206,6 +1345,20 @@ function parseSourceTypes(value: string): CliSourceType[] {
 async function readJsonFile<T>(filePath: string): Promise<T> {
   const raw = await readFile(filePath, "utf8");
   return JSON.parse(raw) as T;
+}
+
+async function readExistingSearchIndex(filePath: string) {
+  if (!(await fileExists(filePath))) return undefined;
+  return readSkillSearchIndex(filePath);
+}
+
+async function fileExists(filePath: string): Promise<boolean> {
+  try {
+    await access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 async function writeJsonFile(filePath: string, value: unknown): Promise<void> {

@@ -68,11 +68,13 @@ search documents from the full Skill index:
 
 ```bash
 skillrouter search-index build --source public --out .skillrouter/public-search-index.json
+skillrouter search-index status --source public --search-index .skillrouter/public-search-index.json
 skillrouter search "review GitHub PR TypeScript code changes" --search-index .skillrouter/public-search-index.json --max 20
 skillrouter recommend "review GitHub PR TypeScript code changes" --search-index .skillrouter/public-search-index.json --search-max 50 --candidate-pack
 ```
 
-The artifact uses schema `skillrouter.search-index/v1`; see
+The artifact uses schema `skillrouter.search-index/v1` and includes source
+fingerprints for fresh/stale checks; see
 [Persistent Search Index](persistent-search-index.md).
 
 ## Future Backends

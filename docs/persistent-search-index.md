@@ -1,7 +1,8 @@
 # Persistent Search Index
 
 M14 adds a dependency-free persistent search index for large Skill collections.
-It is a JSON artifact with schema `skillrouter.search-index/v1`.
+M15 adds freshness checks and incremental rebuild support. The search index is a
+JSON artifact with schema `skillrouter.search-index/v1`.
 
 The persistent index precomputes:
 
@@ -30,6 +31,18 @@ Build from a static source:
 skillrouter search-index build --source public --out .skillrouter/public-search-index.json
 ```
 
+Skip rebuilds when the existing index is still fresh:
+
+```bash
+skillrouter search-index build --source public --out .skillrouter/public-search-index.json --if-stale
+```
+
+Reuse unchanged Skill documents when rebuilding:
+
+```bash
+skillrouter search-index build --source public --out .skillrouter/public-search-index.json --incremental
+```
+
 ## Search
 
 ```bash
@@ -49,6 +62,29 @@ Passing `--search-index` to `recommend` automatically enables search prefilterin
 for the local CLI path. The persistent index is also sufficient to reconstruct
 the local recommendation index because it stores bounded normalized
 `IndexedSkill` records.
+
+## Freshness
+
+M15 adds source and per-Skill fingerprints to persistent search indexes. Use
+`status` to check whether the search index still matches the source local index
+or static source:
+
+```bash
+skillrouter search-index status --source public --search-index .skillrouter/public-search-index.json
+```
+
+The report uses schema `skillrouter.search-index-freshness/v1` and includes:
+
+- `status`: `fresh` or `stale`
+- expected and actual source fingerprints
+- missing Skill IDs
+- stale Skill IDs
+- extra Skill IDs
+- human-readable reasons
+
+Fingerprints ignore volatile index generation timestamps, including
+per-record `indexedAt`, and focus on stable Skill metadata, locator, root path,
+`SKILL.md` path, and indexed body content.
 
 ## MCP
 
@@ -86,6 +122,8 @@ Then clients can request search-prefiltered recommendation normally:
 
 ## Operating Rule
 
-Rebuild the persistent search index whenever the source local index or static
-source snapshot changes. Mirrors may distribute search indexes beside static
-index snapshots in later milestones, but M14 keeps them as local artifacts.
+Run `search-index status` or `search-index build --if-stale` after the source
+local index or static source snapshot changes. Use `--incremental` when the
+existing output index is large and most Skill documents are unchanged. Mirrors
+may distribute search indexes beside static index snapshots in later milestones,
+but M15 keeps them as local artifacts.

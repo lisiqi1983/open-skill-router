@@ -78,6 +78,8 @@ skillrouter recommend "帮我生成一份产品发布 PPT" --source public
 skillrouter recommend "review GitHub PR TypeScript code changes" --source public --search-prefilter --search-max 50
 skillrouter search "review GitHub PR TypeScript code changes" --source public --max 20
 skillrouter search-index build --source public --out .skillrouter/public-search-index.json
+skillrouter search-index status --source public --search-index .skillrouter/public-search-index.json
+skillrouter search-index build --source public --out .skillrouter/public-search-index.json --if-stale --incremental
 skillrouter recommend "review GitHub PR TypeScript code changes" --search-index .skillrouter/public-search-index.json --search-max 50
 skillrouter catalog build --source public --json
 skillrouter catalog analyze --source public --json
@@ -118,7 +120,9 @@ a large-scale search path that performs lexical, semantic, catalog, quality, and
 safety scoring before model rerank. Recommendation can now use search as a
 prefiltered candidate pool for large Skill indexes, and persistent
 `skillrouter.search-index/v1` artifacts can precompute retrieval documents for
-repeated local, MCP, and API search-prefiltered recommendation.
+repeated local, MCP, and API search-prefiltered recommendation. Search indexes
+now include source and per-Skill fingerprints so the CLI can report fresh/stale
+status, skip unnecessary rebuilds, and incrementally reuse unchanged documents.
 
 Try it locally:
 
@@ -140,6 +144,8 @@ node apps/cli/dist/index.js recommend "帮我生成一份产品发布 PPT" --sou
 node apps/cli/dist/index.js recommend "review GitHub PR TypeScript code changes" --source public --search-prefilter --search-max 50
 node apps/cli/dist/index.js search "review GitHub PR TypeScript code changes" --source public --max 20
 node apps/cli/dist/index.js search-index build --source public --out .skillrouter/public-search-index.json
+node apps/cli/dist/index.js search-index status --source public --search-index .skillrouter/public-search-index.json
+node apps/cli/dist/index.js search-index build --source public --out .skillrouter/public-search-index.json --if-stale --incremental
 node apps/cli/dist/index.js recommend "review GitHub PR TypeScript code changes" --search-index .skillrouter/public-search-index.json --search-max 50
 node apps/cli/dist/index.js catalog build --source public --json
 node apps/cli/dist/index.js catalog analyze --source public --json
@@ -184,6 +190,7 @@ pnpm test:analysis
 pnpm test:search
 pnpm test:recommend-search
 pnpm test:persistent-search
+pnpm test:search-refresh
 pnpm build
 ```
 

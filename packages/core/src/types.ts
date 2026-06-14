@@ -464,6 +464,8 @@ export interface SkillSearchIndex {
   generatedAt: string;
   sourceRoot: string;
   skillCount: number;
+  sourceIndexFingerprint?: string;
+  fingerprintAlgorithm?: "skillrouter.search-fingerprint/v1";
   averageDocumentLength: number;
   documentFrequencies: Record<string, number>;
   documents: SkillSearchIndexDocument[];
@@ -472,10 +474,39 @@ export interface SkillSearchIndex {
 export interface SkillSearchIndexDocument {
   indexedSkill: IndexedSkill;
   catalogCard: SkillCatalogCard;
+  skillFingerprint?: string;
   text: string;
   tokenCounts: Record<string, number>;
   tokenCount: number;
   skillVector: Record<string, number>;
+}
+
+export interface SkillSearchIndexBuildOptions {
+  previousIndex?: SkillSearchIndex;
+  now?: Date;
+}
+
+export interface SkillSearchIndexBuildResult {
+  schemaVersion: "skillrouter.search-index-build/v1";
+  generatedAt: string;
+  searchIndex: SkillSearchIndex;
+  reusedDocumentCount: number;
+  rebuiltDocumentCount: number;
+}
+
+export interface SkillSearchIndexFreshnessReport {
+  schemaVersion: "skillrouter.search-index-freshness/v1";
+  checkedAt: string;
+  status: "fresh" | "stale";
+  sourceRoot: string;
+  sourceSkillCount: number;
+  searchIndexSkillCount: number;
+  expectedSourceIndexFingerprint: string;
+  actualSourceIndexFingerprint?: string;
+  missingSkillIds: string[];
+  staleSkillIds: string[];
+  extraSkillIds: string[];
+  reasons: string[];
 }
 
 export interface SearchSkillsResult {

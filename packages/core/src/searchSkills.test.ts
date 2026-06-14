@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { discoverLocalSkills } from "./discoverLocalSkills.js";
 import {
   buildSkillSearchIndex,
+  buildSkillSearchIndexWithStats,
+  checkSkillSearchIndexFreshness,
   localIndexFromSkillSearchIndex,
   searchSkillIndex,
   searchSkills,
@@ -67,5 +69,86 @@ describe("searchSkills", () => {
     );
     expect(result.results[0]?.skill.name).toBe("code-review");
     expect(localIndexFromSkillSearchIndex(searchIndex).skills).toHaveLength(3);
+  });
+
+  it("reports stale persistent indexes when source skills change", async () => {
+    const index = await discoverLocalSkills("../../examples/mock-skills", {
+      now: new Date("2026-06-13T00:00:00.000Z"),
+    });
+    const searchIndex = buildSkillSearchIndex(index, {
+      now: new Date("2026-06-13T00:00:00.000Z"),
+    });
+
+    const fresh = checkSkillSearchIndexFreshness(index, searchIndex, {
+      now: new Date("2026-06-13T00:01:00.000Z"),
+    });
+    expect(fresh.status).toBe("fresh");
+
+    const reindexed = {
+      ...index,
+      generatedAt: "2026-06-14T00:00:00.000Z",
+      skills: index.skills.map((indexedSkill) => ({
+        ...indexedSkill,
+        indexedAt: "2026-06-14T00:00:00.000Z",
+        skill: {
+          ...indexedSkill.skill,
+          indexedAt: "2026-06-14T00:00:00.000Z",
+        },
+      })),
+    };
+    expect(
+      checkSkillSearchIndexFreshness(reindexed, searchIndex, {
+        now: new Date("2026-06-14T00:01:00.000Z"),
+      }).status,
+    ).toBe("fresh");
+
+    const changed = {
+      ...index,
+      skills: index.skills.map((indexedSkill) =>
+        indexedSkill.skill.name === "code-review"
+          ? {
+              ...indexedSkill,
+              body: `${indexedSkill.body}\nAdditional TypeScript review guidance.`,
+            }
+          : indexedSkill,
+      ),
+    };
+    const stale = checkSkillSearchIndexFreshness(changed, searchIndex, {
+      now: new Date("2026-06-13T00:02:00.000Z"),
+    });
+
+    expect(stale.status).toBe("stale");
+    expect(stale.staleSkillIds).toContain("local:code-review");
+  });
+
+  it("reuses unchanged documents during incremental search-index builds", async () => {
+    const index = await discoverLocalSkills("../../examples/mock-skills", {
+      now: new Date("2026-06-13T00:00:00.000Z"),
+    });
+    const first = buildSkillSearchIndexWithStats(index, {
+      now: new Date("2026-06-13T00:00:00.000Z"),
+    });
+    const changed = {
+      ...index,
+      skills: index.skills.map((indexedSkill) =>
+        indexedSkill.skill.name === "code-review"
+          ? {
+              ...indexedSkill,
+              body: `${indexedSkill.body}\nAdditional TypeScript review guidance.`,
+            }
+          : indexedSkill,
+      ),
+    };
+
+    const second = buildSkillSearchIndexWithStats(changed, {
+      previousIndex: first.searchIndex,
+      now: new Date("2026-06-13T00:01:00.000Z"),
+    });
+
+    expect(second.reusedDocumentCount).toBe(2);
+    expect(second.rebuiltDocumentCount).toBe(1);
+    expect(
+      checkSkillSearchIndexFreshness(changed, second.searchIndex).status,
+    ).toBe("fresh");
   });
 });

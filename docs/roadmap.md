@@ -494,3 +494,33 @@ pnpm test:persistent-search
 Status: implemented as a dependency-free persistent JSON search layer. The next
 improvement is incremental refresh and optional SQLite FTS/vector backends for
 larger local and public Skill catalogs.
+
+## M15: Search Index Freshness and Incremental Refresh
+
+Goal: make persistent search indexes operationally cheap by detecting stale
+indexes, skipping unnecessary rebuilds, and reusing unchanged Skill documents.
+
+Deliverables:
+
+- [x] Source-index fingerprinting for `skillrouter.search-index/v1`.
+- [x] Per-Skill document fingerprints.
+- [x] `skillrouter.search-index-freshness/v1` report schema.
+- [x] Core freshness checker for local index versus search index.
+- [x] Incremental search-index build that reuses unchanged documents.
+- [x] CLI `skillrouter search-index status`.
+- [x] CLI `skillrouter search-index build --if-stale`.
+- [x] CLI `skillrouter search-index build --incremental`.
+- [x] M15 smoke test covering fresh, stale, skipped, incremental, and search
+      paths.
+
+Acceptance:
+
+```bash
+skillrouter search-index status --source public --search-index .skillrouter/public-search-index.json
+skillrouter search-index build --source public --out .skillrouter/public-search-index.json --if-stale --incremental
+pnpm test:search-refresh
+```
+
+Status: implemented. The next improvement is distributing search-index artifacts
+beside static snapshots, then optionally replacing the JSON backend with SQLite
+FTS/vector shards for very large public catalogs.

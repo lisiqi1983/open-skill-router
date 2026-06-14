@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import type { RiskLevel, SourceType } from "@openskillrouter/skill-spec";
 import { buildSkillCatalog } from "./skillCatalog.js";
 import { profileTask } from "./taskProfile.js";
@@ -10,7 +11,10 @@ import type {
   SearchSkillsResult,
   SkillCatalogCard,
   SkillSearchIndex,
+  SkillSearchIndexBuildOptions,
+  SkillSearchIndexBuildResult,
   SkillSearchIndexDocument,
+  SkillSearchIndexFreshnessReport,
   SkillSearchHit,
   TaskProfile,
 } from "./types.js";
@@ -22,6 +26,7 @@ interface SearchDocument {
   tokenCounts: Map<string, number>;
   tokenSet: Set<string>;
   tokenCount: number;
+  skillFingerprint: string;
   skillVector: Map<string, number>;
 }
 
@@ -57,26 +62,163 @@ export function searchSkills(options: SearchSkillsOptions): SearchSkillsResult {
 
 export function buildSkillSearchIndex(
   index: LocalSkillIndex,
+  options: SkillSearchIndexBuildOptions = {},
 ): SkillSearchIndex {
+  return buildSkillSearchIndexWithStats(index, options).searchIndex;
+}
+
+export function buildSkillSearchIndexWithStats(
+  index: LocalSkillIndex,
+  options: SkillSearchIndexBuildOptions = {},
+): SkillSearchIndexBuildResult {
   const catalogBySkillId = new Map(
     buildSkillCatalog(index).cards.map((card) => [card.skillId, card]),
   );
-  const documents = index.skills.map((indexedSkill) =>
-    buildSearchDocument(
+  const previousDocuments = new Map(
+    (options.previousIndex?.documents ?? []).map((document) => [
+      document.indexedSkill.skill.id,
+      document,
+    ]),
+  );
+  let reusedDocumentCount = 0;
+  let rebuiltDocumentCount = 0;
+  const documents = index.skills.map((indexedSkill) => {
+    const skillFingerprint = fingerprintIndexedSkill(indexedSkill);
+    const previousDocument = previousDocuments.get(indexedSkill.skill.id);
+    if (previousDocument?.skillFingerprint === skillFingerprint) {
+      reusedDocumentCount += 1;
+      return fromSkillSearchIndexDocument({
+        ...previousDocument,
+        indexedSkill,
+        skillFingerprint,
+      });
+    }
+
+    rebuiltDocumentCount += 1;
+    return buildSearchDocument(
       indexedSkill,
       catalogBySkillId.get(indexedSkill.skill.id),
-    ),
-  );
-
-  return {
+      skillFingerprint,
+    );
+  });
+  const generatedAt = (options.now ?? new Date()).toISOString();
+  const searchIndex: SkillSearchIndex = {
     schemaVersion: "skillrouter.search-index/v1",
-    generatedAt: new Date().toISOString(),
+    generatedAt,
     sourceRoot: index.sourceRoot,
     skillCount: documents.length,
+    sourceIndexFingerprint: fingerprintLocalSkillIndex(index),
+    fingerprintAlgorithm: "skillrouter.search-fingerprint/v1",
     averageDocumentLength: averageDocumentLength(documents),
     documentFrequencies: mapToRecord(computeDocumentFrequencies(documents)),
     documents: documents.map(toSkillSearchIndexDocument),
   };
+
+  return {
+    schemaVersion: "skillrouter.search-index-build/v1",
+    generatedAt,
+    searchIndex,
+    reusedDocumentCount,
+    rebuiltDocumentCount,
+  };
+}
+
+export function checkSkillSearchIndexFreshness(
+  sourceIndex: LocalSkillIndex,
+  searchIndex: SkillSearchIndex,
+  options: { now?: Date } = {},
+): SkillSearchIndexFreshnessReport {
+  const expectedSourceIndexFingerprint =
+    fingerprintLocalSkillIndex(sourceIndex);
+  const expectedSkillFingerprints = new Map(
+    sourceIndex.skills.map((indexedSkill) => [
+      indexedSkill.skill.id,
+      fingerprintIndexedSkill(indexedSkill),
+    ]),
+  );
+  const documentFingerprints = new Map(
+    searchIndex.documents.map((document) => [
+      document.indexedSkill.skill.id,
+      document.skillFingerprint,
+    ]),
+  );
+  const missingSkillIds = Array.from(expectedSkillFingerprints.keys()).filter(
+    (skillId) => !documentFingerprints.has(skillId),
+  );
+  const staleSkillIds = Array.from(expectedSkillFingerprints.entries())
+    .filter(
+      ([skillId, expected]) => documentFingerprints.get(skillId) !== expected,
+    )
+    .map(([skillId]) => skillId)
+    .filter((skillId) => !missingSkillIds.includes(skillId));
+  const extraSkillIds = Array.from(documentFingerprints.keys()).filter(
+    (skillId) => !expectedSkillFingerprints.has(skillId),
+  );
+  const reasons: string[] = [];
+
+  if (!searchIndex.sourceIndexFingerprint) {
+    reasons.push("Search index is missing a source index fingerprint.");
+  } else if (
+    searchIndex.sourceIndexFingerprint !== expectedSourceIndexFingerprint
+  ) {
+    reasons.push(
+      "Search index source fingerprint differs from the source index.",
+    );
+  }
+  if (searchIndex.skillCount !== sourceIndex.skills.length) {
+    reasons.push("Search index skill count differs from the source index.");
+  }
+  if (missingSkillIds.length > 0) {
+    reasons.push(`Missing ${missingSkillIds.length} skill document(s).`);
+  }
+  if (staleSkillIds.length > 0) {
+    reasons.push(`Stale ${staleSkillIds.length} skill document(s).`);
+  }
+  if (extraSkillIds.length > 0) {
+    reasons.push(`Extra ${extraSkillIds.length} skill document(s).`);
+  }
+
+  const fresh =
+    reasons.length === 0 &&
+    searchIndex.sourceIndexFingerprint === expectedSourceIndexFingerprint;
+
+  return {
+    schemaVersion: "skillrouter.search-index-freshness/v1",
+    checkedAt: (options.now ?? new Date()).toISOString(),
+    status: fresh ? "fresh" : "stale",
+    sourceRoot: sourceIndex.sourceRoot,
+    sourceSkillCount: sourceIndex.skills.length,
+    searchIndexSkillCount: searchIndex.skillCount,
+    expectedSourceIndexFingerprint,
+    actualSourceIndexFingerprint: searchIndex.sourceIndexFingerprint,
+    missingSkillIds,
+    staleSkillIds,
+    extraSkillIds,
+    reasons: fresh ? ["Search index matches the source index."] : reasons,
+  };
+}
+
+export function fingerprintLocalSkillIndex(index: LocalSkillIndex): string {
+  return sha256Json({
+    schemaVersion: index.schemaVersion,
+    sourceRoot: index.sourceRoot,
+    skills: index.skills
+      .map((indexedSkill) => ({
+        id: indexedSkill.skill.id,
+        fingerprint: fingerprintIndexedSkill(indexedSkill),
+      }))
+      .sort((left, right) => left.id.localeCompare(right.id)),
+  });
+}
+
+export function fingerprintIndexedSkill(indexedSkill: IndexedSkill): string {
+  const { indexedAt: _skillIndexedAt, ...stableSkill } = indexedSkill.skill;
+  return sha256Json({
+    skill: stableSkill,
+    skillFilePath: indexedSkill.skillFilePath,
+    rootPath: indexedSkill.rootPath,
+    body: indexedSkill.body,
+  });
 }
 
 export function localIndexFromSkillSearchIndex(
@@ -130,6 +272,7 @@ export function searchSkillIndex(
 function buildSearchDocument(
   indexedSkill: IndexedSkill,
   catalogCard?: SkillCatalogCard,
+  skillFingerprint = fingerprintIndexedSkill(indexedSkill),
 ): SearchDocument {
   if (!catalogCard) {
     throw new Error(`Missing catalog card for ${indexedSkill.skill.id}.`);
@@ -148,6 +291,7 @@ function buildSearchDocument(
       (sum, count) => sum + count,
       0,
     ),
+    skillFingerprint,
     skillVector: buildSkillVector(catalogCard, indexedSkill),
   };
 }
@@ -158,6 +302,7 @@ function toSkillSearchIndexDocument(
   return {
     indexedSkill: document.indexedSkill,
     catalogCard: document.catalogCard,
+    skillFingerprint: document.skillFingerprint,
     text: document.text,
     tokenCounts: mapToRecord(document.tokenCounts),
     tokenCount: document.tokenCount,
@@ -177,6 +322,9 @@ function fromSkillSearchIndexDocument(
     tokenCounts,
     tokenSet: new Set(tokenCounts.keys()),
     tokenCount: document.tokenCount,
+    skillFingerprint:
+      document.skillFingerprint ??
+      fingerprintIndexedSkill(document.indexedSkill),
     skillVector: recordToMap(document.skillVector),
   };
 }
@@ -634,6 +782,25 @@ function mapToRecord(map: Map<string, number>): Record<string, number> {
 
 function recordToMap(record: Record<string, number>): Map<string, number> {
   return new Map(Object.entries(record));
+}
+
+function sha256Json(value: unknown): string {
+  return createHash("sha256").update(stableStringify(value)).digest("hex");
+}
+
+function stableStringify(value: unknown): string {
+  if (value === undefined) return "undefined";
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => stableStringify(item)).join(",")}]`;
+  }
+  if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    return `{${Object.keys(record)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${stableStringify(record[key])}`)
+      .join(",")}}`;
+  }
+  return JSON.stringify(value);
 }
 
 function cjkNgrams(text: string): string[] {
